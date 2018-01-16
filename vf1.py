@@ -1,0 +1,503 @@
+# VF-1 Gopher client
+# Prototype release
+
+import cmd
+import collections
+import os.path
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import traceback
+import urllib.parse
+
+# Command abbreviations
+_ABBREVS = {
+    "b":    "back",
+    "f":    "fold",
+    "g":    "go",
+    "h":    "history",
+    "hist": "history",
+    "l":    "less",
+    "li":   "links",
+    "n":    "next",
+    "p":    "previous",
+    "pg":   "page",
+    "prev": "previous",
+    "q":    "quit",
+    "r":    "reload",
+    "s":    "save",
+    "se":   "search",
+    "/":    "search",
+}
+
+# Programs to handle different item types
+_HANDLERS = {
+    "0":    "cat %s",
+    "h":    "lynx --dump %s",
+    "g":    "feh %s",
+    "s":    "mpg123 %s",
+}
+_HANDLERS["I"] = _HANDLERS["g"]
+
+# Lightweight representation of an item in Gopherspace
+GopherItem = collections.namedtuple("GopherItem",
+        ("host", "port", "path", "itemtype", "name"))
+
+def url_to_gopheritem(url, itemtype="?"):
+    u = urllib.parse.urlparse(url)
+    return GopherItem(u.hostname, u.port or 70, u.path or "/", str(itemtype),
+            "<direct URL>")
+
+def gopheritem_to_url(gi):
+    return ("gopher://%s:%d/%s" % (gi.host, int(gi.port), gi.path)) if gi else ""
+
+def gopheritem_from_line(line):
+    line = line.strip()
+    name, path, server, port = line.split("\t")
+    itemtype = name[0]
+    name = name[1:]
+    return GopherItem(server, port, path, itemtype, name)
+
+# Cheap and cheerful URL detector
+def looks_like_url(word):
+    return "://" in word and word.count(".") > 0
+
+class GopherClient(cmd.Cmd):
+
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.intro = "Welcome to VF-1!\nEnjoy your flight through Gopherspace..."
+        self.prompt = "VF-1> "
+        self.tmp_filename = ""
+        self.index = []
+        self.index_index = -1
+        self.history = []
+        self.hist_index = 0
+        self.page_index = 0
+        self.lookup = self.index
+        self.gi = None
+        self.pwd = None
+
+    def _go_to_gi(self, gi, update_hist=True):
+        # Use gopherlib to create a file handler (binary or text)
+        if gi.itemtype in ("g", "I", "s"):
+            mode = "rb"
+        else:
+            mode = "r"
+        f = send_selector(gi.path or "/", gi.host, gi.port or 70, "r")
+
+        # Process that file handler depending upon itemtype
+        if gi.itemtype == "1":
+            self._handle_index(f)
+            self.pwd = gi
+        else:
+            if self.tmp_filename:
+                os.unlink(self.tmp_filename)
+            tmpf = tempfile.NamedTemporaryFile("w" if mode == "r" else "wb", delete=False)
+            tmpf.write(f.read())
+            tmpf.close()
+            self.tmp_filename = tmpf.name
+
+            cmd_str = _HANDLERS.get(gi.itemtype, "strings %s")
+            subprocess.run(shlex.split(cmd_str % tmpf.name))
+      
+        # Update state
+        if update_hist:
+            self._update_history(gi)
+        self.gi = gi
+
+    def _handle_index(self, f):
+        self.index = []
+        n = 1
+        for line in f:
+            if len(line.split("\t")) != 4:
+                continue
+            if line.startswith("i"):
+                print(line[1:].split("\t")[0])
+            else:
+                gi = gopheritem_from_line(line)
+                print(("[%d] " % n) + gi.name)
+                self.index.append(gi)
+                n += 1
+        self.lookup = self.index
+        self.index_index = -1
+        self.page_index = 0
+
+    def _update_history(self, gi):
+        # Don't duplicate
+        if self.history and self.history[-1] == gi:
+            return
+        self.history.append(gi)
+        self.hist_index = len(self.history) - 1
+
+    # Cmd implementation follows
+    def default(self, line):
+        if line.strip() == "EOF":
+            return self.onecmd("quit")
+        elif line.strip() == "..":
+            return self.do_up()
+        # Temporary hacks until I have a bookmarking system
+        elif line.strip() == "sdf":
+            return self.onecmd("go sdf.org/")
+        elif line.strip() == "bongusta":
+            return self.onecmd("go gopher://i-logout.cz//en/bongusta/")
+
+        # Expand abbreviated commands
+        first_word = line.split()[0].strip()
+        if first_word in _ABBREVS:
+            full_cmd = _ABBREVS[first_word]
+            expanded = line.replace(first_word, full_cmd, 1)
+            return self.onecmd(expanded)
+
+        # Try to parse numerical index for lookup table
+        try:
+            n = int(line.strip())
+        except ValueError:
+            print("What?")
+            return
+
+        try:
+            gi = self.lookup[n-1]
+        except IndexError:
+            print ("Index too high!")
+            return
+
+        self.index_index = n
+        self._go_to_gi(gi)
+
+    ### Stuff for getting around
+    def do_go(self, *args):
+        """Go to a gopher URL."""
+        url = args[0]
+        if not url.startswith("gopher://"):
+            url = "gopher://" + url
+
+        # If we're just fed a raw URL...how do we know the itemtype?
+        if url.endswith("/"):
+            gi = url_to_gopheritem(url, "1")
+        elif url.endswith(".txt"):
+            gi = url_to_gopheritem(url, "0")
+        else:
+            gi = url_to_gopheritem(url, "0")
+        self._go_to_gi(gi)
+
+    def do_reload(self, *args):
+        self._go_to_gi(self.gi)
+
+    def do_up(self, *args):
+        """Go up one directory in the path."""
+        pwd = self.pwd
+        pathbits = os.path.split(pwd.path)
+        newpath = os.path.join(*pathbits[0:-1])
+        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name)
+        self._go_to_gi(gi, update_hist=False)
+
+    def do_back(self, *args):
+        """Go back to the previous gopher item."""
+        if not self.history:
+            return
+        self.hist_index -= 1
+        gi = self.history[self.hist_index]
+        self._go_to_gi(gi, update_hist=False)
+
+    def do_next(self, *args):
+        """Go to next item after current in index."""
+        return self.onecmd(str(self.index_index+1))
+
+    def do_previous(self, *args):
+        """Go to previous item before current in index."""
+        self.lookup = self.index
+        return self.onecmd(str(self.index_index-1))
+
+    ### Stuff that modifies the lookup table
+    def do_ls(self, *args):
+        """List contents of current index."""
+        self.lookup = self.index
+        self.show_lookup()
+
+    def do_history(self, *args):
+        """Display history."""
+        self.lookup = self.history
+        self.show_lookup(url=True)
+
+    def do_search(self, searchterm):
+        """Search index (case insensitive)."""
+        self.lookup = [
+            gi for gi in self.lookup if searchterm.lower() in gi.name.lower()]
+        self.show_lookup()
+
+    def do_page(self, *args):
+        """Begin paging through index ten lines at a time."""
+        self.show_lookup(offset=0, end=10)
+        self.page_index = 10
+
+    def emptyline(self):
+        i = self.page_index
+        if i > len(self.lookup):
+            return
+        self.show_lookup(offset=i, end=i+10)
+        self.page_index += 10
+
+    def show_lookup(self, offset=0, end=None, name=True, url=False):
+        for n, gi in enumerate(self.lookup[offset:end]):
+            n += offset
+            line = "[%d] " % (n+1)
+            if name:
+                line += gi.name + " "
+            if url:
+                line += "(%s)" % gopheritem_to_url(gi)
+            print(line)
+
+    ### Stuff that does something to most recently viewed item
+    def do_less(self, *args):
+        """Run most recently visited item through "less" command."""
+        subprocess.run(shlex.split("less %s" % self.tmp_filename))
+
+    def do_fold(self, *args):
+        """Run most recently visited item through "fold" command."""
+        subprocess.run(shlex.split("fold -w 80 -s %s" % self.tmp_filename))
+
+    def do_save(self, filename):
+        """Save most recently visited item to file."""
+        if os.path.exists(filename):
+            print("File already exists!")
+        else:
+            shutil.copyfile(self.tmp_filename, filename)
+
+    def do_url(self, *args):
+        """Print URL of most recently visited item."""
+        print(gopheritem_to_url(self.gi))
+
+    def do_links(self, *args):
+        """Extract URLs from most recently visited item."""
+        links = []
+        with open(self.tmp_filename, "r") as fp:
+            for line in fp:
+                words = line.strip().split()
+                links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
+        self.lookup = links
+        self.show_lookup(name=False, url=True)
+
+    ### The end!
+    def do_quit(self, *args):
+        """Exit VF-1."""
+        print()
+        print("Thank you for flying VF-1!")
+        sys.exit()
+
+    do_exit = do_quit
+
+# Code below is basically the gopherlib.py module from Python 2.4, with
+# minimal changes made for Python 3 compatibility and to handle
+# convenient download of plain text (including Unicode) or binary files.
+# Very possibly not all of this is needed.
+
+
+"""Gopher protocol client interface."""
+
+__all__ = ["send_selector","send_query"]
+
+# Default selector, host and port
+DEF_SELECTOR = '1/'
+DEF_HOST     = 'gopher.micro.umn.edu'
+DEF_PORT     = 70
+
+# Recognized file types
+A_TEXT       = '0'
+A_MENU       = '1'
+A_CSO        = '2'
+A_ERROR      = '3'
+A_MACBINHEX  = '4'
+A_PCBINHEX   = '5'
+A_UUENCODED  = '6'
+A_INDEX      = '7'
+A_TELNET     = '8'
+A_BINARY     = '9'
+A_DUPLICATE  = '+'
+A_SOUND      = 's'
+A_EVENT      = 'e'
+A_CALENDAR   = 'c'
+A_HTML       = 'h'
+A_TN3270     = 'T'
+A_MIME       = 'M'
+A_IMAGE      = 'I'
+A_WHOIS      = 'w'
+A_QUERY      = 'q'
+A_GIF        = 'g'
+A_HTML       = 'h'          # HTML file
+A_WWW        = 'w'          # WWW address
+A_PLUS_IMAGE = ':'
+A_PLUS_MOVIE = ';'
+A_PLUS_SOUND = '<'
+
+
+_names = dir()
+_type_to_name_map = {}
+
+def type_to_name(gtype):
+    """Map all file types to strings; unknown types become TYPE='x'."""
+    global _type_to_name_map
+    if _type_to_name_map=={}:
+        for name in _names:
+            if name[:2] == 'A_':
+                _type_to_name_map[eval(name)] = name[2:]
+    if gtype in _type_to_name_map:
+        return _type_to_name_map[gtype]
+    return 'TYPE=%r' % (gtype,)
+
+# Names for characters and strings
+CRLF = '\r\n'
+TAB = '\t'
+
+def send_selector(selector, host, port = 0, mode="r"):
+    """Send a selector to a given host and port, return a file with the reply."""
+    import socket
+    if not port:
+        i = host.find(':')
+        if i >= 0:
+            host, port = host[:i], int(host[i+1:])
+    if not port:
+        port = DEF_PORT
+    elif type(port) == type(''):
+        port = int(port)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
+    s.sendall((selector + CRLF).encode("UTF-8"))
+    s.shutdown(1)
+    return s.makefile(mode, encoding="UTF-8")
+
+def send_query(selector, query, host, port = 0):
+    """Send a selector and a query string."""
+    return send_selector(selector + '\t' + query, host, port)
+
+def path_to_selector(path):
+    """Takes a path as returned by urlparse and returns the appropriate selector."""
+    if path=="/":
+        return "/"
+    else:
+        return path[2:] # Cuts initial slash and data type identifier
+
+def path_to_datatype_name(path):
+    """Takes a path as returned by urlparse and maps it to a string.
+    See section 3.4 of RFC 1738 for details."""
+    if path=="/":
+        # No way to tell, although "INDEX" is likely
+        return "TYPE='unknown'"
+    else:
+        return type_to_name(path[1])
+
+# The following functions interpret the data returned by the gopher
+# server according to the expected type, e.g. textfile or directory
+
+def get_directory(f):
+    """Get a directory in the form of a list of entries."""
+    entries = []
+    while 1:
+        line = f.readline()
+        if not line:
+            print('(Unexpected EOF from server)')
+            break
+        if line[-2:] == CRLF:
+            line = line[:-2]
+        elif line[-1:] in CRLF:
+            line = line[:-1]
+        if line == '.':
+            break
+        if not line:
+            print('(Empty line from server)')
+            continue
+        gtype = line[0]
+        parts = line[1:].split(TAB)
+        if len(parts) < 4:
+            print('(Bad line from server: %r)' % (line,))
+            continue
+        if len(parts) > 4:
+            if parts[4:] != ['+']:
+                print('(Extra info from server:',)
+                print(parts[4:], ')')
+        else:
+            parts.append('')
+        parts.insert(0, gtype)
+        entries.append(parts)
+    return entries
+
+def get_textfile(f):
+    """Get a text file as a list of lines, with trailing CRLF stripped."""
+    lines = []
+    get_alt_textfile(f, lines.append)
+    return lines
+
+def get_alt_textfile(f, func):
+    """Get a text file and pass each line to a function, with trailing CRLF stripped."""
+    while 1:
+        line = f.readline()
+        if not line:
+            print('(Unexpected EOF from server)')
+            break
+        if line[-2:] == CRLF:
+            line = line[:-2]
+        elif line[-1:] in CRLF:
+            line = line[:-1]
+        if line == '.':
+            break
+        if line[:2] == '..':
+            line = line[1:]
+        func(line)
+
+def get_binary(f):
+    """Get a binary file as one solid data block."""
+    data = f.read()
+    return data
+
+def get_alt_binary(f, func, blocksize):
+    """Get a binary file and pass each block to a function."""
+    while 1:
+        data = f.read(blocksize)
+        if not data:
+            break
+        func(data)
+
+def test():
+    """Trivial test program."""
+    import sys
+    import getopt
+    opts, args = getopt.getopt(sys.argv[1:], '')
+    selector = DEF_SELECTOR
+    type = selector[0]
+    host = DEF_HOST
+    if args:
+        host = args[0]
+        args = args[1:]
+    if args:
+        type = args[0]
+        args = args[1:]
+        if len(type) > 1:
+            type, selector = type[0], type
+        else:
+            selector = ''
+            if args:
+                selector = args[0]
+                args = args[1:]
+        query = ''
+        if args:
+            query = args[0]
+            args = args[1:]
+    if type == A_INDEX:
+        f = send_query(selector, query, host)
+    else:
+        f = send_selector(selector, host)
+    if type == A_TEXT:
+        lines = get_textfile(f)
+        for item in lines: print(item)
+    elif type in (A_MENU, A_INDEX):
+        entries = get_directory(f)
+        for item in entries: print(item)
+    else:
+        data = get_binary(f)
+        print('binary data:', len(data), 'bytes:', repr(data[:100])[:40])
+
+if __name__ == '__main__':
+    gc = GopherClient()
+    gc.cmdloop()
