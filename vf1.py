@@ -228,12 +228,8 @@ class GopherClient(cmd.Cmd):
             gi for gi in self.lookup if searchterm.lower() in gi.name.lower()]
         self.show_lookup()
 
-    def do_page(self, *args):
-        """Begin paging through index ten lines at a time."""
-        self.show_lookup(offset=0, end=10)
-        self.page_index = 10
-
     def emptyline(self):
+        """Page through index ten lines at a time."""
         i = self.page_index
         if i > len(self.lookup):
             return
