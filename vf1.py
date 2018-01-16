@@ -47,7 +47,7 @@ GopherItem = collections.namedtuple("GopherItem",
 
 def url_to_gopheritem(url, itemtype="?"):
     u = urllib.parse.urlparse(url)
-    return GopherItem(u.hostname, u.port or 70, u.path or "/", str(itemtype),
+    return GopherItem(u.hostname, u.port or 70, u.path, str(itemtype),
             "<direct URL>")
 
 def gopheritem_to_url(gi):
@@ -86,7 +86,7 @@ class GopherClient(cmd.Cmd):
             mode = "rb"
         else:
             mode = "r"
-        f = send_selector(gi.path or "/", gi.host, gi.port or 70, "r")
+        f = send_selector(gi.path, gi.host, gi.port or 70, "r")
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
@@ -175,7 +175,7 @@ class GopherClient(cmd.Cmd):
             url = "gopher://" + url
 
         # If we're just fed a raw URL...how do we know the itemtype?
-        if url.endswith("/"):
+        if url.endswith("/") or url[9:].find("/") == -1:
             gi = url_to_gopheritem(url, "1")
         elif url.endswith(".txt"):
             gi = url_to_gopheritem(url, "0")
@@ -374,15 +374,15 @@ def send_query(selector, query, host, port = 0):
 
 def path_to_selector(path):
     """Takes a path as returned by urlparse and returns the appropriate selector."""
-    if path=="/":
-        return "/"
+    if path=="" or path=="/":
+        return path
     else:
         return path[2:] # Cuts initial slash and data type identifier
 
 def path_to_datatype_name(path):
     """Takes a path as returned by urlparse and maps it to a string.
     See section 3.4 of RFC 1738 for details."""
-    if path=="/":
+    if not path or path=="/":
         # No way to tell, although "INDEX" is likely
         return "TYPE='unknown'"
     else:
