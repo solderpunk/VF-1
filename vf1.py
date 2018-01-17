@@ -14,7 +14,10 @@ import urllib.parse
 
 # Command abbreviations
 _ABBREVS = {
+    "a":    "add",
     "b":    "back",
+    "bm":   "bookmarks",
+    "book": "bookmarks",
     "f":    "fold",
     "g":    "go",
     "h":    "history",
@@ -59,6 +62,11 @@ def gopheritem_from_line(line):
     itemtype = name[0]
     name = name[1:]
     return GopherItem(server, port, path, itemtype, name)
+
+def gopheritem_to_line(gi, name=""):
+    # Prepend itemtype to name
+    name = str(gi.itemtype) + (name or gi.name)
+    return "\t".join((name, gi.path, gi.host, str(gi.port))) + "\n"
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
@@ -275,6 +283,15 @@ class GopherClient(cmd.Cmd):
                 links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
         self.lookup = links
         self.show_lookup(name=False, url=True)
+
+    ### Bookmarking stuff
+    def do_add(self, line):
+        with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
+            fp.write(gopheritem_to_line(self.gi, name=line))
+
+    def do_bookmarks(self, *args):
+        with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "r") as fp:
+            self._handle_index(fp)
 
     ### The end!
     def do_quit(self, *args):
