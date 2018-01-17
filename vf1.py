@@ -140,7 +140,11 @@ class GopherClient(cmd.Cmd):
         for line in f:
             if len(line.split("\t")) != 4:
                 continue
-            if line.startswith("i"):
+            if line.startswith("3"):
+                print("Error message from server:")
+                print(line[1:].split("\t")[0])
+                return
+            elif line.startswith("i"):
                 print(line[1:].split("\t")[0])
             else:
                 gi = gopheritem_from_line(line)
