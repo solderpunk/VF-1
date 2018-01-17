@@ -6,6 +6,7 @@ import collections
 import os.path
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -88,21 +89,35 @@ class GopherClient(cmd.Cmd):
         self.pwd = None
 
     def _go_to_gi(self, gi, update_hist=True):
-        # Use gopherlib to create a file handler (binary or text)
-        if gi.itemtype in ("g", "I", "s"):
-            mode = "rb"
-        else:
-            mode = "r"
-        f = send_selector(gi.path, gi.host, gi.port or 70, "r")
+        # Hit the network
+        try:
+            # Is this a search point?
+            if gi.itemtype == "7":
+                query_str = input("Query term: ")
+                f = send_query(gi.path, query_str, gi.host, gi.port or 70)
+                self._handle_index(f)
+                return
+
+            # Use gopherlib to create a file handler (binary or text)
+            if gi.itemtype in ("g", "I", "s", "9"):
+                mode = "rb"
+            else:
+                mode = "r"
+            f = send_selector(gi.path, gi.host, gi.port or 70, "r")
+        except socket.gaierror:
+            print("ERROR: DNS error!")
+            return
+        except ConnectionRefusedError:
+            print("ERROR: Connection refused!")
+            return
+        except TimeoutError:
+            print("ERROR: Connection timed out!")
+            return
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
             self._handle_index(f)
             self.pwd = gi
-        elif gi.itemtype == "7":
-            query_str = input("Query term: ")
-            f = send_query(gi.path, query_str, gi.host, gi.port or 70)
-            self._handle_index(f)
         else:
             if self.tmp_filename:
                 os.unlink(self.tmp_filename)
@@ -369,7 +384,6 @@ TAB = '\t'
 
 def send_selector(selector, host, port = 0, mode="r"):
     """Send a selector to a given host and port, return a file with the reply."""
-    import socket
     if not port:
         i = host.find(':')
         if i >= 0:
