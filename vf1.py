@@ -100,6 +100,10 @@ class GopherClient(cmd.Cmd):
         if gi.itemtype == "1":
             self._handle_index(f)
             self.pwd = gi
+        elif gi.itemtype == "7":
+            query_str = input("Query term: ")
+            f = send_query(gi.path, query_str, gi.host, gi.port or 70)
+            self._handle_index(f)
         else:
             if self.tmp_filename:
                 os.unlink(self.tmp_filename)
@@ -383,7 +387,7 @@ def send_selector(selector, host, port = 0, mode="r"):
 
 def send_query(selector, query, host, port = 0):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port)
+    return send_selector(selector + '\t' + query, host, port, "r")
 
 def path_to_selector(path):
     """Takes a path as returned by urlparse and returns the appropriate selector."""
