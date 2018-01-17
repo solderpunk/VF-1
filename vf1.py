@@ -26,7 +26,6 @@ _ABBREVS = {
     "li":   "links",
     "n":    "next",
     "p":    "previous",
-    "pg":   "page",
     "prev": "previous",
     "q":    "quit",
     "r":    "reload",
