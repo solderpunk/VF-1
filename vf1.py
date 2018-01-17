@@ -3,6 +3,7 @@
 
 import cmd
 import collections
+import io
 import os.path
 import shlex
 import shutil
@@ -99,11 +100,11 @@ class GopherClient(cmd.Cmd):
                 return
 
             # Use gopherlib to create a file handler (binary or text)
-            if gi.itemtype in ("g", "I", "s", "9"):
+            if gi.itemtype in ("?", "g", "I", "s", "9"):
                 mode = "rb"
             else:
                 mode = "r"
-            f = send_selector(gi.path, gi.host, gi.port or 70, "r")
+            f = send_selector(gi.path, gi.host, gi.port or 70, mode)
         except socket.gaierror:
             print("ERROR: DNS error!")
             return
@@ -113,6 +114,14 @@ class GopherClient(cmd.Cmd):
         except TimeoutError:
             print("ERROR: Connection timed out!")
             return
+
+        # Take a best guess at items with unknown type
+        if gi.itemtype == "?":
+            gi, f = self._autodetect_itemtype(gi, f)
+            if gi.itemtype in ("?", "g", "I", "s", "9"):
+                mode = "rb"
+            else:
+                mode = "r"
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
@@ -133,6 +142,39 @@ class GopherClient(cmd.Cmd):
         if update_hist:
             self._update_history(gi)
         self.gi = gi
+
+    def _autodetect_itemtype(self, gi, f):
+        raw_bytes = f.read()
+        # Is this text?
+        try:
+            text = raw_bytes.decode("UTF-8")
+        except UnicodeError:
+            new_f = io.BytesIO()
+            new_f.write(raw_bytes)
+            new_f.seek(0)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name)
+            return new_gi, new_f
+
+        # If we're here, we know we got text
+        new_f = io.StringIO()
+        new_f.write(text)
+        new_f.seek(0)
+        # Is this an index?
+        hits = 0
+        for n, line in enumerate(new_f.readlines()):
+            if n == 10:
+                break
+            try:
+                gi = gopheritem_from_line(line)
+                hits += 1
+            except:
+                continue
+        if hits:
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "1", gi.name)
+        else:
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "0", gi.name)
+        new_f.seek(0)
+        return new_gi, new_f
 
     def _handle_index(self, f):
         self.index = []
@@ -203,14 +245,7 @@ class GopherClient(cmd.Cmd):
         url = args[0]
         if not url.startswith("gopher://"):
             url = "gopher://" + url
-
-        # If we're just fed a raw URL...how do we know the itemtype?
-        if url.endswith("/") or url[9:].find("/") == -1:
-            gi = url_to_gopheritem(url, "1")
-        elif url.endswith(".txt"):
-            gi = url_to_gopheritem(url, "0")
-        else:
-            gi = url_to_gopheritem(url, "0")
+        gi = url_to_gopheritem(url, "?")
         self._go_to_gi(gi)
 
     def do_reload(self, *args):
