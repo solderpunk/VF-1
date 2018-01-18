@@ -348,14 +348,17 @@ class GopherClient(cmd.Cmd):
         """Add the current URL to the bookmarks menu.
 Bookmarks are stored in the ~/.vf1-bookmarks.txt file.
 Optionally, specify the new name for the bookmark."""
-        with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
-            fp.write(gopheritem_to_line(self.gi, name=line))
+        if not self.gi:
+            print("You need to 'go' somewhere, first")
+        else:
+            with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
+                fp.write(gopheritem_to_line(self.gi, name=line))
 
     def do_bookmarks(self, *args):
         """Show the current bookmarks menu.
 Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         file_name = "~/.vf1-bookmarks.txt"
-        if not os.path.isfile(file_name):
+        if not os.path.isfile(os.path.expanduser(file_name)):
             print("You need to 'add' some bookmarks, first")
         else:
             with open(os.path.expanduser(file_name), "r") as fp:
