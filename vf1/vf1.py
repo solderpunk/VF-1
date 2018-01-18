@@ -32,6 +32,7 @@ _ABBREVS = {
     "q":    "quit",
     "r":    "reload",
     "s":    "save",
+    "t":    "tour",
     "se":   "search",
     "/":    "search",
 }
@@ -88,6 +89,7 @@ class GopherClient(cmd.Cmd):
         self.lookup = self.index
         self.gi = None
         self.pwd = None
+        self.waypoints = []
 
     def _go_to_gi(self, gi, update_hist=True):
         # Hit the network
@@ -277,6 +279,30 @@ class GopherClient(cmd.Cmd):
         """Go to previous item before current in index."""
         self.lookup = self.index
         return self.onecmd(str(self.index_index-1))
+
+    def do_tour(self, line):
+        """Add index items as waypoints on a tour, which is basically
+        a FIFO queue of gopher items."""
+        if not line:
+            # Fly to next waypoint on tour
+            if not self.waypoints:
+                print("End of tour.")
+            else:
+                gi = self.waypoints.pop(0)
+                self._go_to_gi(gi)
+        else:
+            for index in line.strip().split():
+                try:
+                    n = int(index)
+                    gi = self.lookup[n-1]
+                    self.waypoints.append(gi)
+                except ValueError:
+                    print("Non-numeric index %s, skipping." % index)
+                except IndexError:
+                    print("Invalid index %d, skipping." % n)
+
+    def do_mark(self, line):
+        pass
 
     ### Stuff that modifies the lookup table
     def do_ls(self, *args):
