@@ -214,11 +214,6 @@ class GopherClient(cmd.Cmd):
             return self.onecmd("quit")
         elif line.strip() == "..":
             return self.do_up()
-        # Temporary hacks until I have a bookmarking system
-        elif line.strip() == "sdf":
-            return self.onecmd("go sdf.org/")
-        elif line.strip() == "bongusta":
-            return self.onecmd("go gopher://i-logout.cz//en/bongusta/")
 
         # Expand abbreviated commands
         first_word = line.split()[0].strip()
