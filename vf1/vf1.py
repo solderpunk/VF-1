@@ -411,6 +411,9 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
     ### The end!
     def do_quit(self, *args):
         """Exit VF-1."""
+        # Clean up after ourself
+        if self.tmp_filename:
+            os.unlink(self.tmp_filename)
         print()
         print("Thank you for flying VF-1!")
         sys.exit()
