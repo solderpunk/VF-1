@@ -51,6 +51,13 @@ can also install as follows:
 python3 setup.py install
 ```
 
+And finally, if you just can't install it, just copy the `vf1/vf1.py`
+file and run it directly.
+
+```
+python3 vf1/vf1.py
+```
+
 ## Quick, informal tutorial-style introduction
 
 VF-1 is built around an interactive command prompt, and has a very "REPL"
