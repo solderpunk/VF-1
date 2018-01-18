@@ -249,7 +249,9 @@ class GopherClient(cmd.Cmd):
         self._go_to_gi(gi)
 
     def do_reload(self, *args):
-        self._go_to_gi(self.gi)
+        """Reload the current URL."""
+        if self.gi:
+            self._go_to_gi(self.gi)
 
     def do_up(self, *args):
         """Go up one directory in the path."""
@@ -343,10 +345,15 @@ class GopherClient(cmd.Cmd):
 
     ### Bookmarking stuff
     def do_add(self, line):
+        """Add the current URL to the bookmarks menu.
+Bookmarks are stored in the ~/.vf1-bookmarks.txt file.
+Optionally, specify the new name for the bookmark."""
         with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
             fp.write(gopheritem_to_line(self.gi, name=line))
 
     def do_bookmarks(self, *args):
+        """Show the current bookmarks menu.
+Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "r") as fp:
             self._handle_index(fp)
 
