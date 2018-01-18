@@ -1,6 +1,56 @@
 # VF-1
 Command line gopher client.  High speed, low drag.
 
+## Invocation
+
+Start VF-1:
+
+```
+vf1
+```
+
+Start VF-1 with your bookmarks:
+
+```
+vf1 --bookmarks
+```
+
+Start VF-1 with your favorite site:
+
+```
+vf1 --go phlogosphere.org
+```
+
+## Installing
+
+Ideally, you would install VF-1 as follows:
+
+```
+pip3 install VF-1
+```
+
+This should install the command `vf1` in either `/usr/local/bin`,
+`/usr/bin`, or `~/.local/bin`.
+
+Alternatively, check out the source code and install it as follows:
+
+```
+pip3 install .
+```
+
+If you're a developer, you probably want an "editable" installation:
+
+```
+pip3 install --editable .
+```
+
+If you're a developer on a Windows machine and your pip is broken, you
+can also install as follows:
+
+```
+python3 setup.py install
+```
+
 ## Quick, informal tutorial-style introduction
 
 VF-1 is built around an interactive command prompt, and has a very "REPL"
