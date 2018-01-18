@@ -10,3 +10,9 @@ dist:
 
 upload:
 	twine upload dist/*
+
+install-dev
+	sudo pip3 install .
+
+install-editable
+	sudo pip3 install -e .

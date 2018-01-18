@@ -354,8 +354,12 @@ Optionally, specify the new name for the bookmark."""
     def do_bookmarks(self, *args):
         """Show the current bookmarks menu.
 Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
-        with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "r") as fp:
-            self._handle_index(fp)
+        file_name = "~/.vf1-bookmarks.txt"
+        if not os.path.isfile(file_name):
+            print("You need to 'add' some bookmarks, first")
+        else:
+            with open(os.path.expanduser(file_name), "r") as fp:
+                self._handle_index(fp)
 
     ### The end!
     def do_quit(self, *args):
