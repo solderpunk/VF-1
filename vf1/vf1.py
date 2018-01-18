@@ -26,6 +26,7 @@ _ABBREVS = {
     "hist": "history",
     "l":    "less",
     "li":   "links",
+    "m":    "mark",
     "n":    "next",
     "p":    "previous",
     "prev": "previous",
@@ -90,6 +91,7 @@ class GopherClient(cmd.Cmd):
         self.gi = None
         self.pwd = None
         self.waypoints = []
+        self.marks = {}
 
     def _go_to_gi(self, gi, update_hist=True):
         # Hit the network
@@ -242,13 +244,20 @@ class GopherClient(cmd.Cmd):
         self._go_to_gi(gi)
 
     ### Stuff for getting around
-    def do_go(self, *args):
-        """Go to a gopher URL."""
-        url = args[0]
-        if not url.startswith("gopher://"):
-            url = "gopher://" + url
-        gi = url_to_gopheritem(url, "?")
-        self._go_to_gi(gi)
+    def do_go(self, line):
+        """Go to a gopher URL or marked item."""
+        line = line.strip()
+        # First, check for possible marks
+        if line in self.marks:
+            gi = self.marks[line]
+            self._go_to_gi(gi)
+        # If this isn't a mark, treat it as a URL
+        else:
+            url = line
+            if not url.startswith("gopher://"):
+                url = "gopher://" + url
+            gi = url_to_gopheritem(url, "?")
+            self._go_to_gi(gi)
 
     def do_reload(self, *args):
         """Reload the current URL."""
@@ -302,7 +311,16 @@ class GopherClient(cmd.Cmd):
                     print("Invalid index %d, skipping." % n)
 
     def do_mark(self, line):
-        pass
+        if not self.gi:
+            print("You need to 'go' somewhere, first")
+        line = line.strip()
+        if not line:
+            for mark, gi in self.marks.items():
+                print("[%s] %s (%s)" % (mark, gi.name, gopheritem_to_url(gi)))
+        elif line.isalpha() and len(line) == 1:
+            self.marks[line] = self.gi
+        else:
+            print("Invalid mark, must be one letter")
 
     ### Stuff that modifies the lookup table
     def do_ls(self, *args):
