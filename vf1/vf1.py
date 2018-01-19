@@ -13,6 +13,12 @@ import sys
 import tempfile
 import traceback
 import urllib.parse
+import signal
+
+def signal_handler(signal, frame):
+    print("BREAK")
+
+signal.signal(signal.SIGINT, signal_handler)
 
 # Command abbreviations
 _ABBREVS = {
