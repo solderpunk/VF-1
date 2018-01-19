@@ -367,6 +367,10 @@ class GopherClient(cmd.Cmd):
         """Run most recently visited item through "fold" command."""
         subprocess.run(shlex.split("fold -w 80 -s %s" % self.tmp_filename))
 
+    def do_shell(self, line):
+        """'cat' most recently visited item through a shell pipeline."""
+        subprocess.run(("cat %s |" % self.tmp_filename) + line, shell=True)
+
     def do_save(self, filename):
         """Save most recently visited item to file."""
         if os.path.exists(filename):
