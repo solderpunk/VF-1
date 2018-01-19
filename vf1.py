@@ -81,7 +81,7 @@ class GopherClient(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.prompt = "VF-1> "
+        self.prompt = "\x1b[38;5;208m" + "VF-1" + "\x1b[38;5;133m" + "> " + "\x1b[0m"
         self.tmp_filename = ""
         self.index = []
         self.index_index = -1
