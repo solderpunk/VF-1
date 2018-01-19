@@ -242,8 +242,10 @@ class GopherClient(cmd.Cmd):
     def do_go(self, line):
         """Go to a gopher URL or marked item."""
         line = line.strip()
+        if not line:
+            print("Go where?")
         # First, check for possible marks
-        if line in self.marks:
+        elif line in self.marks:
             gi = self.marks[line]
             self._go_to_gi(gi)
         # If this isn't a mark, treat it as a URL
