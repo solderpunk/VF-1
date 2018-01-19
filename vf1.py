@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # VF-1 Gopher client
 # Prototype release
 
