@@ -456,15 +456,15 @@ def main():
     parser = argparse.ArgumentParser(description='A command line gopher client.')
     parser.add_argument('--bookmarks', action='store_true',
                         help='start with your list of bookmarks')
-    parser.add_argument('--go', metavar='URL', nargs=1,
+    parser.add_argument('url', metavar='URL', nargs='?',
                         help='start with this URL')
     args = parser.parse_args()
 
     gc = GopherClient()
     if args.bookmarks:
         gc.do_bookmarks()
-    elif args.go:
-        gc.do_go(args.go[0])
+    elif args.url:
+        gc.do_go(args.url)
     gc.cmdloop()
 
 if __name__ == '__main__':
