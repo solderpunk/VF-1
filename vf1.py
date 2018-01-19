@@ -81,7 +81,6 @@ class GopherClient(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.intro = "Welcome to VF-1!\nEnjoy your flight through Gopherspace..."
         self.prompt = "VF-1> "
         self.tmp_filename = ""
         self.index = []
@@ -464,11 +463,17 @@ def main():
     args = parser.parse_args()
 
     gc = GopherClient()
+    print("Welcome to VF-1!")
+    print("Enjoy your flight through Gopherspace...")
     if args.bookmarks:
         gc.do_bookmarks()
     elif args.url:
         gc.do_go(args.url)
-    gc.cmdloop()
+    while True:
+        try:
+            gc.cmdloop()
+        except KeyboardInterrupt:
+            print("")
 
 if __name__ == '__main__':
     main()
