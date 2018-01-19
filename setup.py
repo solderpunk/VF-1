@@ -15,7 +15,6 @@ setup(
         'Environment :: Console',
         'Development Status :: 5 - Production/Stable',
     ],
-    packages=find_packages(),
     entry_points={
         "console_scripts": ["vf1=vf1:main"]
     },
