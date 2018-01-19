@@ -18,7 +18,7 @@ vf1 --bookmarks
 Start VF-1 with your favorite site:
 
 ```
-vf1 --go phlogosphere.org
+vf1 phlogosphere.org
 ```
 
 ## Installing
@@ -51,11 +51,11 @@ can also install as follows:
 python3 setup.py install
 ```
 
-And finally, if you just can't install it, just copy the `vf1/vf1.py`
-file and run it directly.
+And finally, if you just can't install it, just run the `vf1.py`
+file directly.
 
 ```
-python3 vf1/vf1.py
+python3 vf1.py
 ```
 
 ## Quick, informal tutorial-style introduction
