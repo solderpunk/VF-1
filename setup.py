@@ -15,7 +15,7 @@ setup(
         'Environment :: Console',
         'Development Status :: 4 - Beta',
     ],
-    py_modules = ["vf1"]
+    py_modules = ["vf1"],
     entry_points={
         "console_scripts": ["vf1=vf1:main"]
     },
