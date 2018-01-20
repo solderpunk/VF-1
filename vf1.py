@@ -55,11 +55,20 @@ GopherItem = collections.namedtuple("GopherItem",
 
 def url_to_gopheritem(url, itemtype="?"):
     u = urllib.parse.urlparse(url)
-    return GopherItem(u.hostname, u.port or 70, u.path, str(itemtype),
-            "<direct URL>")
+    # https://tools.ietf.org/html/rfc4266#section-2.1
+    path = u.path
+    if u.path and u.path[0] == '/' and len(u.path) > 1:
+        itemtype = u.path[1]
+        path = u.path[2:]
+    return GopherItem(u.hostname, u.port or 70, path, str(itemtype),
+                      "<direct URL>")
 
 def gopheritem_to_url(gi):
-    return ("gopher://%s:%d/%s" % (gi.host, int(gi.port), gi.path)) if gi else ""
+    if gi:
+        return ("gopher://%s:%d/%s%s" % (gi.host, int(gi.port),
+                                         gi.itemtype, gi.path))
+    else:
+        return ""
 
 def gopheritem_from_line(line):
     line = line.strip()
