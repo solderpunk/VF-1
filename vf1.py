@@ -35,9 +35,10 @@ _ABBREVS = {
     "q":    "quit",
     "r":    "reload",
     "s":    "save",
-    "t":    "tour",
     "se":   "search",
     "/":    "search",
+    "t":    "tour",
+    "v":    "veronica",
 }
 
 # Programs to handle different item types
@@ -331,6 +332,12 @@ class GopherClient(cmd.Cmd):
             self.marks[line] = self.gi
         else:
             print("Invalid mark, must be one letter")
+
+    def do_veronica(self, line):
+        # Don't tell Betty!
+        """Submit a search query to the Veronica 2 search engine."""
+        f = send_query("/v2/vs", line, "gopher.floodgap.com", 70)
+        self._handle_index(f)
 
     ### Stuff that modifies the lookup table
     def do_ls(self, *args):
