@@ -1,9 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='VF-1',
     version='0.0.1',
-    description=" Command line gopher client. High speed, low drag.",
+    description="Command line gopher client. High speed, low drag.",
     author="Solderpunk",
     author_email="solderpunk@sdf.org",
     url='https://github.com/solderpunk/VF-1',
@@ -13,7 +13,7 @@ setup(
         'Topic :: Communications',
         'Intended Audience :: End Users/Desktop',
         'Environment :: Console',
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
     ],
     entry_points={
         "console_scripts": ["vf1=vf1:main"]

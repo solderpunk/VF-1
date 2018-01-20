@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # VF-1 Gopher client
-# Prototype release
+# (C) 2018 Solderpunk <solderpunk@sdf.org>
+# With contributions from:
+#  - Alex Schroeder <alex@gnu.org>
 
 import argparse
 import cmd
