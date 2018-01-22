@@ -49,6 +49,7 @@ _HANDLERS = {
     "h":    "lynx --dump %s",
     "g":    "feh %s",
     "s":    "mpg123 %s",
+    "w":    "vi %s",
 }
 _HANDLERS["I"] = _HANDLERS["g"]
 
@@ -113,6 +114,16 @@ class GopherClient(cmd.Cmd):
             if gi.itemtype == "7":
                 query_str = input("Query term: ")
                 f = send_query(gi.path, query_str, gi.host, gi.port or 70)
+                self._handle_index(f)
+                return
+            elif gi.itemtype == "w":
+                f = write_text(gi)
+                self._handle_index(f)
+                return
+
+            # Use gopherlib to create a file handler (binary or text)
+            if gi.itemtype in ("?", "g", "I", "s", "9"):
+                mode = "rb"
             else:
                 # Use gopherlib to create a file handler (binary or text)
                 if gi.itemtype in ("?", "g", "I", "s", "9"):
@@ -520,6 +531,30 @@ def send_selector(selector, host, port = 0, mode="r"):
 def send_query(selector, query, host, port = 0):
     """Send a selector and a query string."""
     return send_selector(selector + '\t' + query, host, port, "r")
+
+def write_text(gi):
+    """Edit text and send it to the server."""
+    tmpf = tempfile.NamedTemporaryFile("w", delete=False)
+    cmd_str = _HANDLERS.get("w", "ed %s")
+
+    try:
+        subprocess.run(shlex.split(cmd_str % tmpf.name))
+    except FileNotFoundError as err:
+        print('ERROR running "' + (cmd_str % '...')
+              + '": you need to install this editor')
+
+    try:
+        f = open(tmpf.name, mode='r', encoding='utf-8')
+        data = f.read()
+    except FileNotFoundError as err:
+        print('ERROR: ' + err)
+
+    if not data.endswith('\n.\n'):
+        if not data.endswith('\n'):
+            data += '\n'
+        data += '.\n'
+
+    return send_selector(gi.path + '\n' + data, gi.host, gi.port, "r")
 
 # Main function
 def main():
