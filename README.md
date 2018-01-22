@@ -15,7 +15,7 @@ Start VF-1 with your bookmarks:
 vf1 --bookmarks
 ```
 
-Start VF-1 with your favorite site:
+Start VF-1 with your favourite site:
 
 ```
 vf1 phlogosphere.org
@@ -69,7 +69,9 @@ are using VF-1. :)
 Well, let's start off by heading to SDF to check out some nice phlogs!  Use the
 "go" command:
 
+```
 VF-1> go sdf.org/
+```
 
 (don't leave off the trailing slash - this won't be necessary in future
 releases, but right now it is required for technical reasons I won't get into)
@@ -81,7 +83,9 @@ You should see a listing of the SDF Gopherspace.  The different menu items are
 indicated by numbers in square brackets, and the SDF Member PHLOGOSPHERE is
 option [1], so go ahead and type "1" and then enter:
 
+```
 VF-1> 1
+```
 
 You should see all the phlogs fly by, and unless you have a very large monitor
 some have probably run off the top of the screen.  This will not be an uncommon
@@ -98,7 +102,9 @@ enough for you.  But suppose you are really curious about one phlog in
 particular.  Say you want to know what Tomasino has been up to.  You could
 search for his phlog specifically:
 
+```
 VF-1> search tom
+```
 
 (if you are very lazy, you can use "/" instead of "search", i.e. "/ tom")
 
@@ -111,7 +117,9 @@ then "1" and enter to read his most recent entry about Kindles.
 Suppose now you want to go back to the main SDF phlog listing.  Let's check out
 your history:
 
+```
 VF-1> history
+```
 
 (if you are very lazy, you can abbreviate "history" to "hist", and in fact if
 you are fiendishly lazy you can just use "h")
@@ -124,7 +132,9 @@ For this next bit, let's focus on gunnarfrost's phlog, because he writes very
 nice short entries which work well for this.  Once you're at the main phlog
 listing, do a:
 
+```
 VF-1> search frost
+```
 
 To easily find gunnarfrost's phlog and then press [1] to type the first entry.
 
@@ -132,7 +142,9 @@ Short and sweet!  Now, suppose you want to read his next post.  You *could* use
 the "back" command to go back to the menu listing and then press "2", and then
 do "back" and "3", "back" and "4", etc.  But it's much easier to just type:
 
+```
 VF-1> next
+```
 
 (or, if you are lazy, just "n")
 
@@ -147,7 +159,9 @@ lines just keep going until your terminal wraps them (sorry, gunnarfrost, I
 don't mean to single you out here, plenty of other folk do this too!).  Once
 you've found one of these, try running:
 
+```
 VF-1> fold
+```
 
 And VF-1 will wrap the lines at 80 chars for you (assuming you have the "fold"
 command installed on whatever system you are using).  This isn't the only helper
@@ -158,18 +172,22 @@ incapable of writing phlog posts which are less than a few whole screens long.
 Go to one of these posts (say my most recent "assorted replies and
 acknowledgements"), and watch the lines fly by.  Now try:
 
+```
 VF-1> less
+```
 
 This will pipe my giant entry through "less", so you can move back and forth and
 read it.  Just press "q" when you're done like usual to get your VF-1 prompt
 back.
 
 I have quite a few references at the end of that entry.  You might be tempted to
-pick up your mouse, highlight those urls, and use the "go" command to visit
+pick up your mouse, highlight those URLs, and use the "go" command to visit
 them.  Put that rodent down!  The mouse, that is, not the gopher.  Instead, try
 this command:
 
+```
 VF-1> links
+```
 
 VF-1 will then scan the most recently viewed post for URLs.  Well, actually, it
 scans for words (i.e. things separated by spaces) which contain "://" and at
@@ -181,11 +199,15 @@ mouse!
 If you want to know the URL of a document you are at so that you can refer to
 it, just do:
 
+```
 VF-1> url
+```
 
 If you want to save the document, just do:
 
+```
 VF-1> save ~/some/random/path/somefilename.txt
+```
 
 Everything so far has been text-based.  Gopher items with itemtype 0 (text) are
 fed to the "cat" command by default, or to "less" or "fold" if you request it.
@@ -200,11 +222,55 @@ if you want to use different programs, you will have to edit the code.  It's not
 hard, just look for the _HANDLERS dictionary near the top of vf1.py and change
 accordingly.
 
-This pretty much covers the basics!  I hope to add a bookmarking function soon.
-In the meantime, I have hardcoded two commands in there.  You can always type
-"sdf" to jump to sdf.org, and you can always type "bongusa" to go to Bongusta.
+You probably need some bookmarks, right? Here's how to add the current
+URL to your bookmarks. You can provide your own name, if you want.
 
-To make a few implcit concepts explicit:
+```
+VF-1> add
+```
+
+(or, if you are as lazy as usual, just "a")
+
+If you want to reorganize your bookmarks, just open
+`~/.vf1-bookmarks.txt` using a text editor and do it.
+
+If you want to look at your bookmarks:
+
+```
+VF-1> bookmarks
+```
+
+(or, if you feel comfortably lazy, just "bm")
+
+Sometimes you're looking at a menu and it's very long but you know you
+want to look at few items, one after another. Assume you're looking at
+`phlogosphere.org`, for example. How about adding the first four items
+to a *tour* and then going on that tour?
+
+```
+VF-1> tour 1 2 3 4
+VF-1> tour
+```
+
+Use the tour command without any arguments to go to the next stop.
+This is basically your stack of items to go to. (And yes, you guessed
+it. Use "t" if you're feeling lazy.)
+
+But there's more. Let's say you're looking at something pretty
+interesting, like the list of all the phlogs on `phlogosphere.org`.
+How about marking this place with a letter, following some links, and
+then returning to this location not using a bunch of "back" and "up"
+commands but just that one letter?
+
+```
+VF-1> mark x
+VF-1> ... do some stuff ...
+VF-1> go x
+```
+
+(And yes, "m" for the lazy.)
+
+To make a few implicit concepts explicit:
 
 * VF-1 always has in it's mind exactly one "index", i.e. a list of places in
   Gopherspace with numbers attached to them.  By typing "1" and enter, "2" and
@@ -222,7 +288,7 @@ To make a few implcit concepts explicit:
 * In general, VF-1 does not remember much.  It always has some idea of the most
   recently visited gopher menu (i.e. itemtype 1) and the most recently visited
   gopher document (i.e. any other itemtype).  "ls" always operates on the most
-  recently visisted gopher *menu*, even if you have visited some documents since
+  recently visited gopher *menu*, even if you have visited some documents since
   then.  Commands like "fold", "less" and "save" operate on the most recently
   visited *document*, even if you have visited some menus since then.  Basically
   everything operates one the most recently seen thing of the appropriate type.
