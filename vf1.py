@@ -354,9 +354,13 @@ class GopherClient(cmd.Cmd):
 
     def do_search(self, searchterm):
         """Search index (case insensitive)."""
-        self.lookup = [
+        results = [
             gi for gi in self.lookup if searchterm.lower() in gi.name.lower()]
-        self.show_lookup()
+        if results:
+            self.lookup = results
+            self.show_lookup()
+        else:
+            print("No results found.")
 
     def emptyline(self):
         """Page through index ten lines at a time."""
