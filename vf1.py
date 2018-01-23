@@ -182,7 +182,7 @@ class GopherClient(cmd.Cmd):
             if n == 10:
                 break
             try:
-                gi = gopheritem_from_line(line)
+                junk_gi = gopheritem_from_line(line)
                 hits += 1
             except:
                 continue
