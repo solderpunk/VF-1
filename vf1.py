@@ -153,7 +153,7 @@ class GopherClient(cmd.Cmd):
             self.tmp_filename = tmpf.name
 
             cmd_str = _HANDLERS.get(gi.itemtype, "strings %s")
-            subprocess.run(shlex.split(cmd_str % tmpf.name))
+            subprocess.call(shlex.split(cmd_str % tmpf.name))
       
         # Update state
         if update_hist:
@@ -383,15 +383,15 @@ class GopherClient(cmd.Cmd):
     ### Stuff that does something to most recently viewed item
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
-        subprocess.run(shlex.split("less %s" % self.tmp_filename))
+        subprocess.call(shlex.split("less %s" % self.tmp_filename))
 
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
-        subprocess.run(shlex.split("fold -w 80 -s %s" % self.tmp_filename))
+        subprocess.call(shlex.split("fold -w 80 -s %s" % self.tmp_filename))
 
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
-        subprocess.run(("cat %s |" % self.tmp_filename) + line, shell=True)
+        subprocess.call(("cat %s |" % self.tmp_filename) + line, shell=True)
 
     def do_save(self, filename):
         """Save most recently visited item to file."""
