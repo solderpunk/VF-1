@@ -87,7 +87,7 @@ def gopheritem_to_line(gi, name=""):
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
-    return "://" in word and word.count(".") > 0
+    return "." in word and word.startswith("gopher://")
 
 class GopherClient(cmd.Cmd):
 
