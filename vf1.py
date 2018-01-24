@@ -113,15 +113,13 @@ class GopherClient(cmd.Cmd):
             if gi.itemtype == "7":
                 query_str = input("Query term: ")
                 f = send_query(gi.path, query_str, gi.host, gi.port or 70)
-                self._handle_index(f)
-                return
-
-            # Use gopherlib to create a file handler (binary or text)
-            if gi.itemtype in ("?", "g", "I", "s", "9"):
-                mode = "rb"
             else:
-                mode = "r"
-            f = send_selector(gi.path, gi.host, gi.port or 70, mode)
+                # Use gopherlib to create a file handler (binary or text)
+                if gi.itemtype in ("?", "g", "I", "s", "9"):
+                    mode = "rb"
+                else:
+                    mode = "r"
+                f = send_selector(gi.path, gi.host, gi.port or 70, "rb")
         except socket.gaierror:
             print("ERROR: DNS error!")
             return
@@ -132,22 +130,38 @@ class GopherClient(cmd.Cmd):
             print("ERROR: Connection timed out!")
             return
 
+        # Attempt to decode something that is supposed to be text
+        if gi.itemtype in ("0", "1", "h"):
+            try:
+                f = self._decode_text(f)
+            except UnicodeError:
+                print("ERROR: Unsupported text encoding!")
+                return
+
         # Take a best guess at items with unknown type
-        if gi.itemtype == "?":
+        # (Does this happen anymore?)
+        elif gi.itemtype == "?":
             gi, f = self._autodetect_itemtype(gi, f)
-            if gi.itemtype in ("?", "g", "I", "s", "9"):
-                mode = "rb"
-            else:
-                mode = "r"
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
             self._handle_index(f)
             self.pwd = gi
+        elif gi.itemtype == "7":
+            self._handle_index(f)
+            # Return now so we don't update any further state
+            return
         else:
             if self.tmp_filename:
                 os.unlink(self.tmp_filename)
-            tmpf = tempfile.NamedTemporaryFile("w" if mode == "r" else "wb", delete=False)
+
+            # Set mode for tmpfile
+            if gi.itemtype in ("?", "g", "I", "s", "9"):
+                mode = "wb"
+            else:
+                mode = "w"
+
+            tmpf = tempfile.NamedTemporaryFile(mode, delete=False)
             tmpf.write(f.read())
             tmpf.close()
             self.tmp_filename = tmpf.name
@@ -160,25 +174,49 @@ class GopherClient(cmd.Cmd):
             self._update_history(gi)
         self.gi = gi
 
-    def _autodetect_itemtype(self, gi, f):
+    def _decode_text(self, f):
+        # Attempt to decode some bytes into Unicode according to the three
+        # most commonly used encodings on the web.  These 3 cover 95% of
+        # web content, so hopefully will work well in Goperhspace.  If none
+        # of these encodings work, raise UnicodeError
+        encodings = ["UTF-8", "iso-8859-1", "cp-1251"]
         raw_bytes = f.read()
-        # Is this text?
-        try:
-            text = raw_bytes.decode("UTF-8")
-        except UnicodeError:
-            new_f = io.BytesIO()
-            new_f.write(raw_bytes)
-            new_f.seek(0)
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name)
-            return new_gi, new_f
-
-        # If we're here, we know we got text
+        while True:
+            enc = encodings.pop(0)
+            try:
+                text = raw_bytes.decode(enc)
+                break
+            except UnicodeError as e:
+                if not encodings:
+                    # No encodings left to try, so reraise UnicodeError and
+                    # let the caller handle it
+                    raise e
         new_f = io.StringIO()
         new_f.write(text)
         new_f.seek(0)
+        return new_f
+
+    def _autodetect_itemtype(self, gi, f):
+        # INPUT: gi, f
+        # gi is a GopherItem with an itemtype of ?
+        # f is a non-seekable filelike item returning raw bytes
+        # OUTPUT: gi, f
+        # gi is a GopherItem with known itemtype
+        # f is a seekable filelike item returning Unicode if gi.itemtype
+        # is 0 or 1, or returning raw bytes otherwise
+
+        raw_bytes = io.BytesIO(f.read())
+        try:
+            text = self._decode_text(raw_bytes)
+        except UnicodeError:
+            raw_bytes.seek(0)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name)
+            return new_gi, raw_bytes
+
+        # If we're here, we know we got text
         # Is this an index?
         hits = 0
-        for n, line in enumerate(new_f.readlines()):
+        for n, line in enumerate(text.readlines()):
             if n == 10:
                 break
             try:
@@ -190,8 +228,8 @@ class GopherClient(cmd.Cmd):
             new_gi = GopherItem(gi.host, gi.port, gi.path, "1", gi.name)
         else:
             new_gi = GopherItem(gi.host, gi.port, gi.path, "0", gi.name)
-        new_f.seek(0)
-        return new_gi, new_f
+        text.seek(0)
+        return new_gi, text
 
     def _handle_index(self, f):
         self.index = []
