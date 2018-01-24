@@ -514,7 +514,6 @@ def send_selector(selector, host, port = 0, mode="r"):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     s.sendall((selector + CRLF).encode("UTF-8"))
-    s.shutdown(1)
     return s.makefile(mode, encoding="UTF-8")
 
 def send_query(selector, query, host, port = 0):
