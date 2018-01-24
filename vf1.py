@@ -156,12 +156,14 @@ class GopherClient(cmd.Cmd):
                 os.unlink(self.tmp_filename)
 
             # Set mode for tmpfile
-            if gi.itemtype in ("?", "g", "I", "s", "9"):
-                mode = "wb"
-            else:
+            if gi.itemtype in ("0", "h"):
                 mode = "w"
+                encoding = "UTF-8"
+            else:
+                mode = "wb"
+                encoding = None
 
-            tmpf = tempfile.NamedTemporaryFile(mode, delete=False)
+            tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
             tmpf.write(f.read())
             tmpf.close()
             self.tmp_filename = tmpf.name
@@ -514,7 +516,7 @@ def send_selector(selector, host, port = 0, mode="r"):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     s.sendall((selector + CRLF).encode("UTF-8"))
-    return s.makefile(mode, encoding="UTF-8")
+    return s.makefile(mode, encoding="UTF-8" if mode=="r" else None)
 
 def send_query(selector, query, host, port = 0):
     """Send a selector and a query string."""
