@@ -535,6 +535,10 @@ def main():
     gc = GopherClient()
     print("Welcome to VF-1!")
     print("Enjoy your flight through Gopherspace...")
+    rcfile = os.path.expanduser("~/.vf1rc")
+    if os.path.exists(rcfile):
+        with open(rcfile, "r") as fp:
+            gc.cmdqueue = fp.readlines()
     if args.bookmarks:
         gc.do_bookmarks()
     elif args.url:
