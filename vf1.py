@@ -501,7 +501,6 @@ DEF_PORT     = 70
 
 # Names for characters and strings
 CRLF = '\r\n'
-TAB = '\t'
 
 def send_selector(selector, host, port = 0, mode="r"):
     """Send a selector to a given host and port, return a file with the reply."""
