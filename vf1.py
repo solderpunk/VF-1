@@ -367,8 +367,8 @@ class GopherClient(cmd.Cmd):
 
     def do_mark(self, line):
         """Mark the current item with a single letter.  This letter can then
-        be passed to the 'go' command to return to the current item later.
-        Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
+be passed to the 'go' command to return to the current item later.
+Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         if not self.gi:
             print("You need to 'go' somewhere, first")
         line = line.strip()
