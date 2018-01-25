@@ -17,6 +17,7 @@ import sys
 import tempfile
 import traceback
 import urllib.parse
+import ssl
 
 # Command abbreviations
 _ABBREVS = {
@@ -91,9 +92,9 @@ def looks_like_url(word):
 
 class GopherClient(cmd.Cmd):
 
-    def __init__(self):
+    def __init__(self, tls=False):
         cmd.Cmd.__init__(self)
-        self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        self.set_prompt(tls)
         self.tmp_filename = ""
         self.index = []
         self.index_index = -1
@@ -112,36 +113,55 @@ class GopherClient(cmd.Cmd):
             # Is this a search point?
             if gi.itemtype == "7":
                 query_str = input("Query term: ")
-                f = send_query(gi.path, query_str, gi.host, gi.port or 70)
+                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls)
             else:
                 # Use gopherlib to create a file handler (binary or text)
                 if gi.itemtype in ("?", "g", "I", "s", "9"):
                     mode = "rb"
                 else:
                     mode = "r"
-                f = send_selector(gi.path, gi.host, gi.port or 70, "rb")
+                f = send_selector(gi.path, gi.host, gi.port or 70, "rb", self.tls)
+
+
+            # Attempt to decode something that is supposed to be text
+            if gi.itemtype in ("0", "1", "h"):
+                try:
+                    f = self._decode_text(f)
+                except UnicodeError:
+                    print("ERROR: Unsupported text encoding!")
+                    return
+
+            # Take a best guess at items with unknown type
+            # (Does this happen anymore?)
+            elif gi.itemtype == "?":
+                gi, f = self._autodetect_itemtype(gi, f)
+
         except socket.gaierror:
             print("ERROR: DNS error!")
             return
         except ConnectionRefusedError:
             print("ERROR: Connection refused!")
             return
+        except ConnectionResetError:
+            print("ERROR: Connection reset!")
+            if not self.tls:
+                print("Switch to battloid mode using 'tls' to enable encryption.")
+            return
         except TimeoutError:
             print("ERROR: Connection timed out!")
             return
-
-        # Attempt to decode something that is supposed to be text
-        if gi.itemtype in ("0", "1", "h"):
-            try:
-                f = self._decode_text(f)
-            except UnicodeError:
-                print("ERROR: Unsupported text encoding!")
-                return
-
-        # Take a best guess at items with unknown type
-        # (Does this happen anymore?)
-        elif gi.itemtype == "?":
-            gi, f = self._autodetect_itemtype(gi, f)
+        except socket.timeout:
+            print("ERROR: This is taking too long.")
+            if not self.tls:
+                print("Switch to battloid mode using 'tls' to enable encryption.")
+            return
+        except ssl.SSLError as err:
+            print("ERROR: " + err.reason)
+            if err.reason == "UNKNOWN_PROTOCOL":
+                print(gopheritem_to_url(gi) + " is probably not encrypted.")
+                print("In battloid mode, encryption is mandatory.")
+                print("Use 'tls' to toggle battloid mode.")
+            return
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
@@ -480,6 +500,22 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             with open(os.path.expanduser(file_name), "r") as fp:
                 self._handle_index(fp)
 
+    ### Security
+    def do_tls(self, *args):
+        """Engage or disengage battloid mode."""
+        self.set_prompt(not self.tls)
+        if self.tls:
+            print("Battloid mode engaged! Only accepting encrypted connections.")
+        else:
+            print("Battloid mode disengaged! Switching to unencrypted channels.")
+
+    def set_prompt(self, tls):
+        self.tls = tls
+        if self.tls:
+            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        else:
+            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        
     ### The end!
     def do_quit(self, *args):
         """Exit VF-1."""
@@ -502,7 +538,7 @@ DEF_PORT     = 70
 # Names for characters and strings
 CRLF = '\r\n'
 
-def send_selector(selector, host, port = 0, mode="r"):
+def send_selector(selector, host, port = 0, mode="r", tls=False):
     """Send a selector to a given host and port, return a file with the reply."""
     if not port:
         i = host.find(':')
@@ -513,13 +549,20 @@ def send_selector(selector, host, port = 0, mode="r"):
     elif type(port) == type(''):
         port = int(port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if tls:
+        context = ssl.create_default_context()
+        # context.check_hostname = False
+        # context.verify_mode = ssl.CERT_NONE
+        s = context.wrap_socket(s, server_hostname = host)
+    else:
+        s.settimeout(10.0)
     s.connect((host, port))
     s.sendall((selector + CRLF).encode("UTF-8"))
     return s.makefile(mode, encoding="UTF-8" if mode=="r" else None)
 
-def send_query(selector, query, host, port = 0):
+def send_query(selector, query, host, port=0, tls=False):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port, "r")
+    return send_selector(selector + '\t' + query, host, port, "r", tls)
 
 # Main function
 def main():
@@ -529,11 +572,16 @@ def main():
                         help='start with your list of bookmarks')
     parser.add_argument('url', metavar='URL', nargs='?',
                         help='start with this URL')
+    parser.add_argument('--tls', action='store_true',
+                        help='secure all communications using TLS')
     args = parser.parse_args()
 
-    gc = GopherClient()
+    gc = GopherClient(tls=args.tls)
     print("Welcome to VF-1!")
-    print("Enjoy your flight through Gopherspace...")
+    if args.tls:
+        print("Battloid mode engaged! Watch your back in Gopherspace!")
+    else:
+        print("Enjoy your flight through Gopherspace...")
     rcfile = os.path.expanduser("~/.vf1rc")
     if os.path.exists(rcfile):
         with open(rcfile, "r") as fp:
