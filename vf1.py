@@ -317,6 +317,25 @@ class GopherClient(cmd.Cmd):
         self.index_index = n
         self._go_to_gi(gi)
 
+    ### Settings
+    def do_handler(self, line):
+        """View or set handler commands for different MIME types."""
+        if not line.strip():
+            # Show all current handlers
+            for mime in sorted(_MIME_HANDLERS.keys()):
+                print("%s   %s" % (mime, _MIME_HANDLERS[mime]))
+        elif len(line.split()) == 1:
+            mime = line.strip()
+            if mime in _MIME_HANDLERS:
+                print("%s   %s" % (mime, _MIME_HANDLERS[mime]))
+            else:
+                print("No handler set for MIME type %s" % mime)
+        else:
+            mime, handler = line.split(" ", 1)
+            _MIME_HANDLERS[mime] = handler
+            if "%s" not in handler:
+                print("Are you sure you don't want to pass the filename to the handler?")
+
     ### Stuff for getting around
     def do_go(self, line):
         """Go to a gopher URL or marked item."""
