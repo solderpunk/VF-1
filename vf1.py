@@ -7,7 +7,9 @@
 import argparse
 import cmd
 import collections
+import fnmatch
 import io
+import mimetypes
 import os.path
 import shlex
 import shutil
@@ -44,13 +46,21 @@ _ABBREVS = {
 }
 
 # Programs to handle different item types
-_HANDLERS = {
-    "0":    "cat %s",
-    "h":    "lynx --dump %s",
-    "g":    "feh %s",
-    "s":    "mpg123 %s",
+_ITEMTYPE_TO_MIME = {
+    "0":    "text/plain",
+    "h":    "text/html",
+    "g":    "image/gif",
+    "I":    "image/jpeg",
+    "s":    "audio/x-wav",
 }
-_HANDLERS["I"] = _HANDLERS["g"]
+
+_MIME_HANDLERS = {
+    "text/plain":           "cat %s",
+    "text/html":            "lynx --dump %s",
+    "image/*":              "feh %s",
+    "audio/*":              "mpg123 %s",
+    "application/pdf":      "xpdf %s",
+}
 
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
@@ -168,13 +178,29 @@ class GopherClient(cmd.Cmd):
             tmpf.close()
             self.tmp_filename = tmpf.name
 
-            cmd_str = _HANDLERS.get(gi.itemtype, "strings %s")
-            subprocess.call(shlex.split(cmd_str % tmpf.name))
+            cmd_str = self.get_handler_cmd(gi)
+            try:
+                subprocess.call(shlex.split(cmd_str % tmpf.name))
+            except FileNotFoundError:
+                print("Handler program %s not found!" % cmd_str.split()[0])
+                print("You can use the ! command to specify another handler program or pipeline.")
       
         # Update state
         if update_hist:
             self._update_history(gi)
         self.gi = gi
+
+    def get_handler_cmd(self, gi):
+        if gi.itemtype in _ITEMTYPE_TO_MIME:
+            mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
+        else:
+            mimetype, encoding = mimetypes.guess_type(gi.path)
+        for handled_mime, cmd_str in _MIME_HANDLERS.items():
+            if fnmatch.fnmatch(mimetype, handled_mime):
+                break
+        else:
+            cmd_str = "strings %d"
+        return cmd_str
 
     def _decode_text(self, f):
         # Attempt to decode some bytes into Unicode according to the three
