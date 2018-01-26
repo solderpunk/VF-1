@@ -391,7 +391,7 @@ class GopherClient(cmd.Cmd):
 
     def do_tour(self, line):
         """Add index items as waypoints on a tour, which is basically
-        a FIFO queue of gopher items."""
+a FIFO queue of gopher items."""
         if not line:
             # Fly to next waypoint on tour
             if not self.waypoints:
