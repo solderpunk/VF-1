@@ -125,12 +125,8 @@ class GopherClient(cmd.Cmd):
             if gi.itemtype in ("?", "g", "I", "s", "9"):
                 mode = "rb"
             else:
-                # Use gopherlib to create a file handler (binary or text)
-                if gi.itemtype in ("?", "g", "I", "s", "9"):
-                    mode = "rb"
-                else:
-                    mode = "r"
-                f = send_selector(gi.path, gi.host, gi.port or 70, "rb")
+                # Use gopherlib to create a binary file handler
+                f = send_selector(gi.path, gi.host, gi.port or 70)
         except socket.gaierror:
             print("ERROR: DNS error!")
             return
@@ -142,15 +138,15 @@ class GopherClient(cmd.Cmd):
             return
 
         # Attempt to decode something that is supposed to be text
-        if gi.itemtype in ("0", "1", "h"):
+        if gi.itemtype in ("0", "1", "7", "h"):
             try:
                 f = self._decode_text(f)
             except UnicodeError:
                 print("ERROR: Unsupported text encoding!")
                 return
 
-        # Take a best guess at items with unknown type
-        # (Does this happen anymore?)
+        # Take a best guess at items with unknown type (for example
+        # when using go example.com and no path)
         elif gi.itemtype == "?":
             gi, f = self._autodetect_itemtype(gi, f)
 
@@ -395,6 +391,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         # Don't tell Betty!
         """Submit a search query to the Veronica 2 search engine."""
         f = send_query("/v2/vs", line, "gopher.floodgap.com", 70)
+        f = self._decode_text(f)
         self._handle_index(f)
 
     ### Stuff that modifies the lookup table
@@ -513,8 +510,9 @@ DEF_PORT     = 70
 # Names for characters and strings
 CRLF = '\r\n'
 
-def send_selector(selector, host, port = 0, mode="r"):
-    """Send a selector to a given host and port, return a file with the reply."""
+def send_selector(selector, host, port = 0):
+    """Send a selector to a given host and port.
+Returns a binary file with the reply."""
     if not port:
         i = host.find(':')
         if i >= 0:
@@ -526,11 +524,11 @@ def send_selector(selector, host, port = 0, mode="r"):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     s.sendall((selector + CRLF).encode("UTF-8"))
-    return s.makefile(mode, encoding="UTF-8" if mode=="r" else None)
+    return s.makefile(mode = "rb")
 
 def send_query(selector, query, host, port = 0):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port, "r")
+    return send_selector(selector + '\t' + query, host, port)
 
 def write_text(gi):
     """Edit text and send it to the server."""
