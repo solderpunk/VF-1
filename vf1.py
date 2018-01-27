@@ -7,7 +7,9 @@
 import argparse
 import cmd
 import collections
+import fnmatch
 import io
+import mimetypes
 import os.path
 import shlex
 import shutil
@@ -44,14 +46,21 @@ _ABBREVS = {
 }
 
 # Programs to handle different item types
-_HANDLERS = {
-    "0":    "cat %s",
-    "h":    "lynx --dump %s",
-    "g":    "feh %s",
-    "s":    "mpg123 %s",
-    "w":    "vi %s",
+_ITEMTYPE_TO_MIME = {
+    "0":    "text/plain",
+    "h":    "text/html",
+    "g":    "image/gif",
+    "I":    "image/jpeg",
+    "s":    "audio/x-wav",
 }
-_HANDLERS["I"] = _HANDLERS["g"]
+
+_MIME_HANDLERS = {
+    "text/plain":           "cat %s",
+    "text/html":            "lynx --dump %s",
+    "image/*":              "feh %s",
+    "audio/*":              "mpg123 %s",
+    "application/pdf":      "xpdf %s",
+}
 
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
@@ -175,13 +184,29 @@ class GopherClient(cmd.Cmd):
             tmpf.close()
             self.tmp_filename = tmpf.name
 
-            cmd_str = _HANDLERS.get(gi.itemtype, "strings %s")
-            subprocess.call(shlex.split(cmd_str % tmpf.name))
+            cmd_str = self.get_handler_cmd(gi)
+            try:
+                subprocess.call(shlex.split(cmd_str % tmpf.name))
+            except FileNotFoundError:
+                print("Handler program %s not found!" % cmd_str.split()[0])
+                print("You can use the ! command to specify another handler program or pipeline.")
       
         # Update state
         if update_hist:
             self._update_history(gi)
         self.gi = gi
+
+    def get_handler_cmd(self, gi):
+        if gi.itemtype in _ITEMTYPE_TO_MIME:
+            mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
+        else:
+            mimetype, encoding = mimetypes.guess_type(gi.path)
+        for handled_mime, cmd_str in _MIME_HANDLERS.items():
+            if fnmatch.fnmatch(mimetype, handled_mime):
+                break
+        else:
+            cmd_str = "strings %d"
+        return cmd_str
 
     def _decode_text(self, f):
         # Attempt to decode some bytes into Unicode according to the three
@@ -298,6 +323,25 @@ class GopherClient(cmd.Cmd):
         self.index_index = n
         self._go_to_gi(gi)
 
+    ### Settings
+    def do_handler(self, line):
+        """View or set handler commands for different MIME types."""
+        if not line.strip():
+            # Show all current handlers
+            for mime in sorted(_MIME_HANDLERS.keys()):
+                print("%s   %s" % (mime, _MIME_HANDLERS[mime]))
+        elif len(line.split()) == 1:
+            mime = line.strip()
+            if mime in _MIME_HANDLERS:
+                print("%s   %s" % (mime, _MIME_HANDLERS[mime]))
+            else:
+                print("No handler set for MIME type %s" % mime)
+        else:
+            mime, handler = line.split(" ", 1)
+            _MIME_HANDLERS[mime] = handler
+            if "%s" not in handler:
+                print("Are you sure you don't want to pass the filename to the handler?")
+
     ### Stuff for getting around
     def do_go(self, line):
         """Go to a gopher URL or marked item."""
@@ -353,7 +397,7 @@ class GopherClient(cmd.Cmd):
 
     def do_tour(self, line):
         """Add index items as waypoints on a tour, which is basically
-        a FIFO queue of gopher items."""
+a FIFO queue of gopher items."""
         if not line:
             # Fly to next waypoint on tour
             if not self.waypoints:
@@ -533,7 +577,8 @@ def send_query(selector, query, host, port = 0):
 def write_text(gi):
     """Edit text and send it to the server."""
     tmpf = tempfile.NamedTemporaryFile("w", delete=False)
-    cmd_str = _HANDLERS.get("w", "ed %s")
+    # make this configurable?
+    cmd_str = "vi %s"
 
     try:
         subprocess.run(shlex.split(cmd_str % tmpf.name))
