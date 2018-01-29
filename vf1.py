@@ -141,7 +141,9 @@ class GopherClient(cmd.Cmd):
             return
         except ConnectionResetError:
             print("ERROR: Connection reset!")
-            if not self.tls:
+            if self.tls:
+                print("Disable battloid mode using 'tls' to enter civilian territory.")
+            else:
                 print("Switch to battloid mode using 'tls' to enable encryption.")
             return
         except TimeoutError:
