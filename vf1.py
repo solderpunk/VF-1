@@ -19,6 +19,7 @@ import sys
 import tempfile
 import traceback
 import urllib.parse
+import ssl
 
 # Command abbreviations
 _ABBREVS = {
@@ -64,7 +65,7 @@ _MIME_HANDLERS = {
 
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
-        ("host", "port", "path", "itemtype", "name"))
+        ("host", "port", "path", "itemtype", "name", "tls"))
 
 def url_to_gopheritem(url, itemtype="?"):
     u = urllib.parse.urlparse(url)
@@ -73,22 +74,25 @@ def url_to_gopheritem(url, itemtype="?"):
     if u.path and u.path[0] == '/' and len(u.path) > 1:
         itemtype = u.path[1]
         path = u.path[2:]
-    return GopherItem(u.hostname, u.port or 70, path, str(itemtype),
-                      "<direct URL>")
+    return GopherItem(u.hostname, u.port or 70, path,
+                      str(itemtype), "<direct URL>",
+                      True if u.scheme == "gophers" else False)
 
 def gopheritem_to_url(gi):
     if gi:
-        return ("gopher://%s:%d/%s%s" % (gi.host, int(gi.port),
-                                         gi.itemtype, gi.path))
+        return ("gopher%s://%s:%d/%s%s" % (
+            "s" if gi.tls else "",
+            gi.host, int(gi.port),
+            gi.itemtype, gi.path))
     else:
         return ""
 
-def gopheritem_from_line(line):
+def gopheritem_from_line(line, tls):
     line = line.strip()
     name, path, server, port = line.split("\t")
     itemtype = name[0]
     name = name[1:]
-    return GopherItem(server, port, path, itemtype, name)
+    return GopherItem(server, port, path, itemtype, name, tls)
 
 def gopheritem_to_line(gi, name=""):
     # Prepend itemtype to name
@@ -97,13 +101,13 @@ def gopheritem_to_line(gi, name=""):
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
-    return "." in word and word.startswith("gopher://")
+    return "." in word and word.startswith(("gopher://", "gophers://"))
 
 class GopherClient(cmd.Cmd):
 
-    def __init__(self):
+    def __init__(self, tls=False):
         cmd.Cmd.__init__(self)
-        self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        self.set_prompt(tls)
         self.tmp_filename = ""
         self.index = []
         self.index_index = -1
@@ -122,32 +126,51 @@ class GopherClient(cmd.Cmd):
             # Is this a search point?
             if gi.itemtype == "7":
                 query_str = input("Query term: ")
-                f = send_query(gi.path, query_str, gi.host, gi.port or 70)
+                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls)
             else:
-                # Use gopherlib to create a binary file handler
-                f = send_selector(gi.path, gi.host, gi.port or 70)
+                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls)
+
+            # Attempt to decode something that is supposed to be text
+            if gi.itemtype in ("0", "1", "7", "h"):
+                try:
+                    f = self._decode_text(f)
+                except UnicodeError:
+                    print("ERROR: Unsupported text encoding!")
+                    return
+
+            # Take a best guess at items with unknown type
+            # (Does this happen anymore?)
+            elif gi.itemtype == "?":
+                gi, f = self._autodetect_itemtype(gi, f)
+
         except socket.gaierror:
             print("ERROR: DNS error!")
             return
         except ConnectionRefusedError:
             print("ERROR: Connection refused!")
             return
+        except ConnectionResetError:
+            print("ERROR: Connection reset!")
+            if self.tls:
+                print("Disable battloid mode using 'tls' to enter civilian territory.")
+            else:
+                print("Switch to battloid mode using 'tls' to enable encryption.")
+            return
         except TimeoutError:
             print("ERROR: Connection timed out!")
             return
-
-        # Attempt to decode something that is supposed to be text
-        if gi.itemtype in ("0", "1", "7", "h"):
-            try:
-                f = self._decode_text(f)
-            except UnicodeError:
-                print("ERROR: Unsupported text encoding!")
-                return
-
-        # Take a best guess at items with unknown type (for example
-        # when using go example.com and no path)
-        elif gi.itemtype == "?":
-            gi, f = self._autodetect_itemtype(gi, f)
+        except socket.timeout:
+            print("ERROR: This is taking too long.")
+            if not self.tls:
+                print("Switch to battloid mode using 'tls' to enable encryption.")
+            return
+        except ssl.SSLError as err:
+            print("ERROR: " + err.reason)
+            if err.reason == "UNKNOWN_PROTOCOL":
+                print(gopheritem_to_url(gi) + " is probably not encrypted.")
+                print("In battloid mode, encryption is mandatory.")
+                print("Use 'tls' to toggle battloid mode.")
+            return
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
@@ -234,7 +257,7 @@ class GopherClient(cmd.Cmd):
             text = self._decode_text(raw_bytes)
         except UnicodeError:
             raw_bytes.seek(0)
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name, gi.tls)
             return new_gi, raw_bytes
 
         # If we're here, we know we got text
@@ -244,14 +267,14 @@ class GopherClient(cmd.Cmd):
             if n == 10:
                 break
             try:
-                junk_gi = gopheritem_from_line(line)
+                junk_gi = gopheritem_from_line(line, self.tls)
                 hits += 1
             except:
                 continue
         if hits:
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "1", gi.name)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "1", gi.name, self.tls)
         else:
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "0", gi.name)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "0", gi.name, self.tls)
         text.seek(0)
         return new_gi, text
 
@@ -268,7 +291,7 @@ class GopherClient(cmd.Cmd):
             elif line.startswith("i"):
                 print(line[1:].split("\t")[0])
             else:
-                gi = gopheritem_from_line(line)
+                gi = gopheritem_from_line(line, self.tls)
                 print(("[%d] " % n) + gi.name)
                 self.index.append(gi)
                 n += 1
@@ -347,8 +370,18 @@ class GopherClient(cmd.Cmd):
         # If this isn't a mark, treat it as a URL
         else:
             url = line
-            if not url.startswith("gopher://"):
+            if self.tls and url.startswith("gopher://"):
+                print("Cannot enter demilitarized zone in battloid.")
+                print("Use 'tls' to toggle battloid mode.")
+                return
+            elif not self.tls and url.startswith("gophers://"):
+                print("Must use battloid mode to enter battlezone.")
+                print("Use 'tls' to toggle battloid mode.")
+                return
+            elif not self.tls and not url.startswith("gopher://"):
                 url = "gopher://" + url
+            elif self.tls and not url.startswith("gophers://"):
+                url = "gophers://" + url
             gi = url_to_gopheritem(url, "?")
             self._go_to_gi(gi)
 
@@ -362,7 +395,7 @@ class GopherClient(cmd.Cmd):
         pwd = self.pwd
         pathbits = os.path.split(pwd.path)
         newpath = os.path.join(*pathbits[0:-1])
-        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name)
+        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name, gi.tls)
         self._go_to_gi(gi, update_hist=False)
 
     def do_back(self, *args):
@@ -384,7 +417,8 @@ class GopherClient(cmd.Cmd):
 
     def do_root(self, *args):
         """Go to root selector of the server hosting current item."""
-        gi = GopherItem(self.gi.host, self.gi.port, "", "?", "Root of %s" % self.gi.host)
+        gi = GopherItem(self.gi.host, self.gi.port, "", "?",
+                        "Root of %s" % self.gi.host, self.tls)
         self._go_to_gi(gi)
 
     def do_tour(self, line):
@@ -499,7 +533,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         with open(self.tmp_filename, "r") as fp:
             for line in fp:
                 words = line.strip().split()
-                links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
+                links.extend([url_to_gopheritem(w, tls=self.tls) for w in words if looks_like_url(w)])
         self.lookup = links
         self.show_lookup(name=False, url=True)
 
@@ -524,6 +558,22 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             with open(os.path.expanduser(file_name), "r") as fp:
                 self._handle_index(fp)
 
+    ### Security
+    def do_tls(self, *args):
+        """Engage or disengage battloid mode."""
+        self.set_prompt(not self.tls)
+        if self.tls:
+            print("Battloid mode engaged! Only accepting encrypted connections.")
+        else:
+            print("Battloid mode disengaged! Switching to unencrypted channels.")
+
+    def set_prompt(self, tls):
+        self.tls = tls
+        if self.tls:
+            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        else:
+            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        
     ### The end!
     def do_quit(self, *args):
         """Exit VF-1."""
@@ -546,7 +596,7 @@ DEF_PORT     = 70
 # Names for characters and strings
 CRLF = '\r\n'
 
-def send_selector(selector, host, port = 0):
+def send_selector(selector, host, port = 0, tls=False):
     """Send a selector to a given host and port.
 Returns a binary file with the reply."""
     if not port:
@@ -558,13 +608,20 @@ Returns a binary file with the reply."""
     elif type(port) == type(''):
         port = int(port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if tls:
+        context = ssl.create_default_context()
+        # context.check_hostname = False
+        # context.verify_mode = ssl.CERT_NONE
+        s = context.wrap_socket(s, server_hostname = host)
+    else:
+        s.settimeout(10.0)
     s.connect((host, port))
     s.sendall((selector + CRLF).encode("UTF-8"))
     return s.makefile(mode = "rb")
 
-def send_query(selector, query, host, port = 0):
+def send_query(selector, query, host, port=0, tls=False):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port)
+    return send_selector(selector + '\t' + query, host, port, tls)
 
 # Main function
 def main():
@@ -574,11 +631,16 @@ def main():
                         help='start with your list of bookmarks')
     parser.add_argument('url', metavar='URL', nargs='?',
                         help='start with this URL')
+    parser.add_argument('--tls', action='store_true',
+                        help='secure all communications using TLS')
     args = parser.parse_args()
 
-    gc = GopherClient()
+    gc = GopherClient(tls=args.tls)
     print("Welcome to VF-1!")
-    print("Enjoy your flight through Gopherspace...")
+    if args.tls:
+        print("Battloid mode engaged! Watch your back in Gopherspace!")
+    else:
+        print("Enjoy your flight through Gopherspace...")
     rcfile = os.path.expanduser("~/.vf1rc")
     if os.path.exists(rcfile):
         with open(rcfile, "r") as fp:
