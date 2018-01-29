@@ -257,7 +257,7 @@ class GopherClient(cmd.Cmd):
             text = self._decode_text(raw_bytes)
         except UnicodeError:
             raw_bytes.seek(0)
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name)
+            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name, gi.tls)
             return new_gi, raw_bytes
 
         # If we're here, we know we got text
@@ -393,7 +393,7 @@ class GopherClient(cmd.Cmd):
         pwd = self.pwd
         pathbits = os.path.split(pwd.path)
         newpath = os.path.join(*pathbits[0:-1])
-        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name)
+        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name, gi.tls)
         self._go_to_gi(gi, update_hist=False)
 
     def do_back(self, *args):
