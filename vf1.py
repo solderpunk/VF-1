@@ -370,7 +370,8 @@ class GopherClient(cmd.Cmd):
 
     def do_root(self, *args):
         """Go to root selector of the server hosting current item."""
-        gi = GopherItem(self.gi.host, self.gi.port, "", "?", "Root of %s" % self.gi.host)
+        gi = GopherItem(self.gi.host, self.gi.port, "", "?",
+                        "Root of %s" % self.gi.host, self.tls)
         self._go_to_gi(gi)
 
     def do_tour(self, line):
