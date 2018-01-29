@@ -293,6 +293,8 @@ class GopherClient(cmd.Cmd):
             return self.onecmd("quit")
         elif line.strip() == "..":
             return self.do_up()
+        elif line.startswith("/"):
+            return self.do_search(line[1:])
 
         # Expand abbreviated commands
         first_word = line.split()[0].strip()
