@@ -57,7 +57,7 @@ _ITEMTYPE_TO_MIME = {
 
 _MIME_HANDLERS = {
     "text/plain":           "cat %s",
-    "text/html":            "lynx --dump %s",
+    "text/html":            "lynx -dump -force_html %s",
     "image/*":              "feh %s",
     "audio/*":              "mpg123 %s",
     "application/pdf":      "xpdf %s",
