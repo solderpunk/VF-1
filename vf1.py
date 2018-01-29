@@ -475,7 +475,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
 
     def do_url(self, *args):
         """Print URL of most recently visited item."""
-        print(gopheritem_to_url(self.gi, self.tls))
+        print(gopheritem_to_url(self.gi))
 
     def do_links(self, *args):
         """Extract URLs from most recently visited item."""
