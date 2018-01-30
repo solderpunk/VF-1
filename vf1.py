@@ -393,9 +393,12 @@ class GopherClient(cmd.Cmd):
     def do_up(self, *args):
         """Go up one directory in the path."""
         pwd = self.pwd
+        if pwd is None:
+            print("There is no path without a gopher menu")
+            return
         pathbits = os.path.split(pwd.path)
         newpath = os.path.join(*pathbits[0:-1])
-        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name, gi.tls)
+        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name, self.tls)
         self._go_to_gi(gi, update_hist=False)
 
     def do_back(self, *args):
