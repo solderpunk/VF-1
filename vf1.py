@@ -422,8 +422,8 @@ class GopherClient(cmd.Cmd):
         self._go_to_gi(gi)
 
     def do_tour(self, line):
-        """Add index items as waypoints on a tour, which is basically
-a FIFO queue of gopher items."""
+        """Add index items as waypoints on a tour, which is basically a FIFO
+queue of gopher items. Use tour 1 2 3 4 or ranges like tour 1-4."""
         if not line:
             # Fly to next waypoint on tour
             if not self.waypoints:
@@ -434,9 +434,15 @@ a FIFO queue of gopher items."""
         else:
             for index in line.strip().split():
                 try:
-                    n = int(index)
-                    gi = self.lookup[n-1]
-                    self.waypoints.append(gi)
+                    pair = index.split('-')
+                    if len(pair) == 2:
+                        for n in range(int(pair[0]), int(pair[1]) + 1):
+                            gi = self.lookup[n-1]
+                            self.waypoints.append(gi)
+                    else:
+                        n = int(index)
+                        gi = self.lookup[n-1]
+                        self.waypoints.append(gi)
                 except ValueError:
                     print("Non-numeric index %s, skipping." % index)
                 except IndexError:

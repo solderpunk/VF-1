@@ -256,6 +256,13 @@ Use the tour command without any arguments to go to the next stop.
 This is basically your stack of items to go to. (And yes, you guessed
 it. Use "t" if you're feeling lazy.)
 
+Actually, if you're really lazy, you can use ranges, too:
+
+```
+VF-1> tour 1-4
+VF-1> tour
+```
+
 But there's more. Let's say you're looking at something pretty
 interesting, like the list of all the phlogs on `phlogosphere.org`.
 How about marking this place with a letter, following some links, and
