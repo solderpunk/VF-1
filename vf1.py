@@ -438,14 +438,19 @@ queue of gopher items. Use tour 1 2 3 4 or ranges like tour 1-4."""
             for index in line.strip().split():
                 try:
                     pair = index.split('-')
-                    if len(pair) == 2:
+                    if len(pair) == 1:
+                        # Just a single index
+                        n = int(index)
+                        gi = self.lookup[n-1]
+                        self.waypoints.append(gi)
+                    elif len(pair) == 2:
+                        # Two endpoints for a range of indices
                         for n in range(int(pair[0]), int(pair[1]) + 1):
                             gi = self.lookup[n-1]
                             self.waypoints.append(gi)
                     else:
-                        n = int(index)
-                        gi = self.lookup[n-1]
-                        self.waypoints.append(gi)
+                        # Syntax error
+                        print("Invalid use of range syntax %s, skipping" % index)
                 except ValueError:
                     print("Non-numeric index %s, skipping." % index)
                 except IndexError:
