@@ -164,6 +164,10 @@ class GopherClient(cmd.Cmd):
             if not self.tls:
                 print("Switch to battloid mode using 'tls' to enable encryption.")
             return
+        except OSError:
+            print("ERROR: Operating system error... Recovery initiated...")
+            print("Consider toggling battloid mode using 'tls' to adapt to the new situation.")
+            return
         except ssl.SSLError as err:
             print("ERROR: " + err.reason)
             if err.reason == "UNKNOWN_PROTOCOL":
