@@ -495,10 +495,10 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         self._handle_index(f)
 
     ### Stuff that modifies the lookup table
-    def do_ls(self, *args):
+    def do_ls(self, line):
         """List contents of current index."""
         self.lookup = self.index
-        self.show_lookup()
+        self.show_lookup(url = line.endswith("-l"))
 
     def do_history(self, *args):
         """Display history."""
