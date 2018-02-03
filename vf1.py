@@ -280,7 +280,6 @@ class GopherClient(cmd.Cmd):
 
     def _handle_index(self, f):
         self.index = []
-        n = 1
         for line in f:
             if len(line.split("\t")) != 4:
                 continue
@@ -292,12 +291,29 @@ class GopherClient(cmd.Cmd):
                 print(line[1:].split("\t")[0])
             else:
                 gi = gopheritem_from_line(line, self.tls)
-                print(("[%d] " % n) + gi.name)
                 self.index.append(gi)
-                n += 1
+                print(self._format_gopheritem(len(self.index), gi))
         self.lookup = self.index
         self.index_index = -1
         self.page_index = 0
+
+    def _format_gopheritem(self, index, gi, name=True, url=False):
+        line = "[%d] " % index
+        if name:
+            line += gi.name
+            if gi.itemtype == "1":
+                line += "/"
+            elif gi.itemtype in ("g", "I"):
+                line += " <IMG>"
+            elif gi.itemtype == "s":
+                line += " <AUD>"
+            elif gi.itemtype == "h":
+                line += " <HTML>"
+            elif gi.itemtype == "9":
+                line += " <BIN>"
+        if url:
+            line += " (%s)" % gopheritem_to_url(gi)
+        return line
 
     def _update_history(self, gi):
         # Don't duplicate
@@ -509,13 +525,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
 
     def show_lookup(self, offset=0, end=None, name=True, url=False):
         for n, gi in enumerate(self.lookup[offset:end]):
-            n += offset
-            line = "[%d] " % (n+1)
-            if name:
-                line += gi.name + " "
-            if url:
-                line += "(%s)" % gopheritem_to_url(gi)
-            print(line)
+            print(self._format_gopheritem(n+offset+1, gi, name, url))
 
     ### Stuff that does something to most recently viewed item
     def do_less(self, *args):
