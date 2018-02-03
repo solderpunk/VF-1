@@ -547,7 +547,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         with open(self.tmp_filename, "r") as fp:
             for line in fp:
                 words = line.strip().split()
-                links.extend([url_to_gopheritem(w, tls=self.tls) for w in words if looks_like_url(w)])
+                links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
         self.lookup = links
         self.show_lookup(name=False, url=True)
 
