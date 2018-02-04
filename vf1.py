@@ -586,7 +586,13 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
     def do_ls(self, line):
         """List contents of current index."""
         self.lookup = self.index
-        self.show_lookup(url = line.endswith("-l"))
+        # If we add any more options to ls, we'll have to use argparse
+        # again here, but I hope the options don't explode, and for just
+        # two, the below seems good enough.
+        options = line.strip().split()
+        show_urls = any((x in options for x in ("-l", "-lr")))
+        reverse = any((x in options for x in ("-r", "-lr")))
+        self.show_lookup(url = show_urls, reverse = reverse)
 
     def do_history(self, *args):
         """Display history."""
@@ -611,8 +617,12 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         self.show_lookup(offset=i, end=i+10)
         self.page_index += 10
 
-    def show_lookup(self, offset=0, end=None, name=True, url=False):
-        for n, gi in enumerate(self.lookup[offset:end]):
+    def show_lookup(self, offset=0, end=None, name=True, url=False, reverse=False):
+        if reverse:
+            iterator = enumerate(self.lookup[end:offset:-1])
+        else:
+            iterator = enumerate(self.lookup[offset:end])
+        for n, gi in iterator:
             print(self._format_gopheritem(n+offset+1, gi, name, url))
 
     ### Stuff that does something to most recently viewed item
