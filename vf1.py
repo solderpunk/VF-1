@@ -282,9 +282,9 @@ class GopherClient(cmd.Cmd):
         wildcard_matches = []
         for handled_mime, cmd_str in _MIME_HANDLERS.items():
             if "*" in handled_mime:
-                wildcard_matches.append(handled_mime, cmd_str)
+                wildcard_matches.append((handled_mime, cmd_str))
             else:
-                exact_matches.append(handled_mime, cmd_str)
+                exact_matches.append((handled_mime, cmd_str))
         for handled_mime, cmd_str in exact_matches + wildcard_matches:
             if fnmatch.fnmatch(mimetype, handled_mime):
                 break
