@@ -116,11 +116,13 @@ def url_to_gopheritem(url, itemtype="?"):
                       True if u.scheme == "gophers" else False)
 
 def gopheritem_to_url(gi):
-    if gi:
+    if gi and gi.host:
         return ("gopher%s://%s:%d/%s%s" % (
             "s" if gi.tls else "",
             gi.host, int(gi.port),
             gi.itemtype, gi.path))
+    elif gi:
+        return gi.path
     else:
         return ""
 
@@ -163,8 +165,11 @@ class GopherClient(cmd.Cmd):
     def _go_to_gi(self, gi, update_hist=True):
         # Hit the network
         try:
+            # Is this a local file?
+            if gi.host is None:
+                f = open(gi.path, "rb")
             # Is this a search point?
-            if gi.itemtype == "7":
+            elif gi.itemtype == "7":
                 query_str = input("Query term: ")
                 f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls)
             else:
@@ -427,6 +432,11 @@ class GopherClient(cmd.Cmd):
         elif line in self.marks:
             gi = self.marks[line]
             self._go_to_gi(gi)
+        # or a local file
+        elif os.path.exists(os.path.expanduser(line)):
+            gi = GopherItem(None, None, os.path.expanduser(line),
+                            "1", line, self.tls)
+            self._go_to_gi(gi)
         # If this isn't a mark, treat it as a URL
         else:
             url = line
@@ -631,8 +641,9 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         if not os.path.isfile(os.path.expanduser(file_name)):
             print("You need to 'add' some bookmarks, first")
         else:
-            with open(os.path.expanduser(file_name), "r") as fp:
-                self._handle_index(fp)
+            gi = GopherItem(None, None, os.path.expanduser(file_name),
+                            "1", file_name, self.tls)
+            self._go_to_gi(gi)
 
     ### Security
     def do_tls(self, *args):
