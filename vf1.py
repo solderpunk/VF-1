@@ -160,6 +160,8 @@ class GopherClient(cmd.Cmd):
         self.marks = {}
 
         self.options = {
+            "auto_page" : False,
+            "auto_page_threshold" : 25,
             "color_menus" : False,
         }
 
@@ -342,10 +344,17 @@ class GopherClient(cmd.Cmd):
             else:
                 gi = gopheritem_from_line(line, self.tls)
                 self.index.append(gi)
-                print(self._format_gopheritem(len(self.index), gi))
+                if (not self.options["auto_page"] or
+                    len(self.index) <= self.options["auto_page_threshold"]):
+                    print(self._format_gopheritem(len(self.index), gi))
         self.lookup = self.index
         self.index_index = -1
-        self.page_index = 0
+        if self.options["auto_page"] and len(self.index) > self.options["auto_page_threshold"]:
+            self.page_index = self.options["auto_page_threshold"]
+            print("...")
+            print("(Menu continues, enter blank lines to page through.")
+        else:
+            self.page_index = 0
 
     def _format_gopheritem(self, index, gi, name=True, url=False):
         line = "[%d] " % index
