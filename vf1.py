@@ -746,6 +746,14 @@ def send_query(selector, query, host, port=0, tls=False):
     """Send a selector and a query string."""
     return send_selector(selector + '\t' + query, host, port, tls)
 
+# Config file finder
+def get_rcfile():
+    rcfile = os.path.expanduser("~/.vf1rc")
+    if os.path.exists(rcfile):
+        return rcfile
+    else:
+        return None
+
 # Main function
 def main():
 
@@ -764,8 +772,8 @@ def main():
         print("Battloid mode engaged! Watch your back in Gopherspace!")
     else:
         print("Enjoy your flight through Gopherspace...")
-    rcfile = os.path.expanduser("~/.vf1rc")
-    if os.path.exists(rcfile):
+    rcfile = get_rcfile()
+    if rcfile:
         with open(rcfile, "r") as fp:
             gc.cmdqueue = fp.readlines()
     if args.bookmarks:
