@@ -63,6 +63,42 @@ _MIME_HANDLERS = {
     "application/pdf":      "xpdf %s",
 }
 
+# Item type formatting stuff
+_ITEMTYPE_TITLES = {
+    "7":        " <INP>",
+    "8":        " <TEL>",
+    "9":        " <BIN>",
+    "g":        " <IMG>",
+    "h":        " <HTM>",
+    "s":        " <SND>",
+    "I":        " <IMG>",
+    "T":        " <TEL>",
+}
+
+_ANSI_COLORS = {
+    "red":      "\x1b[0;31m",
+    "green":    "\x1b[0;32m",
+    "yellow":   "\x1b[0;33m",
+    "blue":     "\x1b[0;34m",
+    "purple":   "\x1b[0;35m",
+    "cyan":     "\x1b[0;36m",
+    "white":    "\x1b[0;37m",
+    "black":    "\x1b[0;30m",
+}
+
+_ITEMTYPE_COLORS = {
+    "0":        _ANSI_COLORS["green"],    # Text File
+    "1":        _ANSI_COLORS["blue"],     # Sub-menu
+    "7":        _ANSI_COLORS["red"],      # Search / Input
+    "8":        _ANSI_COLORS["purple"],   # Telnet
+    "9":        _ANSI_COLORS["cyan"],     # Binary
+    "g":        _ANSI_COLORS["blue"],     # Gif
+    "h":        _ANSI_COLORS["green"],    # HTML
+    "s":        _ANSI_COLORS["cyan"],     # Sound
+    "I":        _ANSI_COLORS["cyan"],     # Gif
+    "T":        _ANSI_COLORS["purple"],   # Telnet
+}
+
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
@@ -119,6 +155,9 @@ class GopherClient(cmd.Cmd):
         self.pwd = None
         self.waypoints = []
         self.marks = {}
+
+        #Options
+        self.color_menus = True
 
     def _go_to_gi(self, gi, update_hist=True):
         # Hit the network
@@ -203,7 +242,7 @@ class GopherClient(cmd.Cmd):
             except FileNotFoundError:
                 print("Handler program %s not found!" % cmd_str.split()[0])
                 print("You can use the ! command to specify another handler program or pipeline.")
-      
+
         # Update state
         if update_hist:
             self._update_history(gi)
@@ -299,20 +338,20 @@ class GopherClient(cmd.Cmd):
 
     def _format_gopheritem(self, index, gi, name=True, url=False):
         line = "[%d] " % index
+
         if name:
             line += gi.name
-            if gi.itemtype == "1":
+            if gi.itemtype in _ITEMTYPE_TITLES:
+                line += _ITEMTYPE_TITLES[gi.itemtype]
+            elif gi.itemtype == "1":
                 line += "/"
-            elif gi.itemtype in ("g", "I"):
-                line += " <IMG>"
-            elif gi.itemtype == "s":
-                line += " <AUD>"
-            elif gi.itemtype == "h":
-                line += " <HTML>"
-            elif gi.itemtype == "9":
-                line += " <BIN>"
+
         if url:
             line += " (%s)" % gopheritem_to_url(gi)
+
+        if self.color_menus and gi.itemtype in _ITEMTYPE_COLORS:
+            line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
+
         return line
 
     def _update_history(self, gi):
