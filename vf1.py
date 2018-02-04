@@ -614,7 +614,9 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
 
     ### Stuff that modifies the lookup table
     def do_ls(self, line):
-        """List contents of current index."""
+        """List contents of current index.
+Use 'ls -l' to see URLs.
+Use 'ls -r' to list in reverse order."""
         self.lookup = self.index
         # If we add any more options to ls, we'll have to use argparse
         # again here, but I hope the options don't explode, and for just
