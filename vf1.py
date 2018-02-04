@@ -661,6 +661,9 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
 
     def do_links(self, *args):
         """Extract URLs from most recently visited item."""
+        if self.gi.itemtype not in ("0", "h"):
+            print("You need to visit a text item, first")
+            return
         links = []
         with open(self.tmp_filename, "r") as fp:
             for line in fp:
