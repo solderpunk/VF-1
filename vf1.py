@@ -438,8 +438,8 @@ class GopherClient(cmd.Cmd):
         """View or set various options."""
         if not line.strip():
             # Show all current settings
-            for setting, value in self.options.items():
-                print("%s   %s" % (setting, value))
+            for option in sorted(self.options.keys()):
+                print("%s   %s" % (option, self.options[option]))
         elif len(line.split()) == 1:
             option = line.strip()
             if option in self.options:
