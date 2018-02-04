@@ -28,6 +28,7 @@ _ABBREVS = {
     "bm":   "bookmarks",
     "book": "bookmarks",
     "f":    "fold",
+    "fo":   "forward",
     "g":    "go",
     "h":    "history",
     "hist": "history",
@@ -462,9 +463,17 @@ class GopherClient(cmd.Cmd):
 
     def do_back(self, *args):
         """Go back to the previous gopher item."""
-        if not self.history:
+        if not self.history or self.hist_index == 0:
             return
         self.hist_index -= 1
+        gi = self.history[self.hist_index]
+        self._go_to_gi(gi, update_hist=False)
+
+    def do_forward(self, *args):
+        """Go forward to the next gopher item."""
+        if not self.history or self.hist_index == len(self.history) - 1:
+            return
+        self.hist_index += 1
         gi = self.history[self.hist_index]
         self._go_to_gi(gi, update_hist=False)
 
