@@ -166,6 +166,14 @@ class GopherClient(cmd.Cmd):
         }
 
     def _go_to_gi(self, gi, update_hist=True):
+        # Telnet is a completely separate thing
+        if gi.itemtype in ("8", "T"):
+            subprocess.call(shlex.split("telnet %s %s" % (gi.host, gi.port)))
+            if update_hist:
+                self._update_history(gi)
+            return
+
+        # From here on in, it's gopher only
         # Hit the network
         try:
             # Is this a local file?
