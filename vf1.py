@@ -159,8 +159,9 @@ class GopherClient(cmd.Cmd):
         self.waypoints = []
         self.marks = {}
 
-        #Options
-        self.color_menus = True
+        self.options = {
+            "color_menus" : False,
+        }
 
     def _go_to_gi(self, gi, update_hist=True):
         # Hit the network
@@ -359,7 +360,7 @@ class GopherClient(cmd.Cmd):
         if url:
             line += " (%s)" % gopheritem_to_url(gi)
 
-        if self.color_menus and gi.itemtype in _ITEMTYPE_COLORS:
+        if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
             line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
 
         return line
@@ -404,6 +405,31 @@ class GopherClient(cmd.Cmd):
         self._go_to_gi(gi)
 
     ### Settings
+    def do_set(self, line):
+        """View or set various options."""
+        if not line.strip():
+            # Show all current settings
+            for setting, value in self.options.items():
+                print("%s   %s" % (setting, value))
+        elif len(line.split()) == 1:
+            option = line.strip()
+            if option in self.options:
+                print("%s   %s" % (option, self.options[option]))
+            else:
+                print("Unrecognised option %s" % option)
+        else:
+            option, value = line.split(" ", 1)
+            if option not in self.options:
+                print("Unrecognised option %s" % option)
+                return
+            elif value.isnumeric():
+                value = int(value)
+            elif value.lower() == "false":
+                value = False
+            elif value.lower() == "true":
+                value = True
+            self.options[option] = value
+
     def do_handler(self, line):
         """View or set handler commands for different MIME types."""
         if not line.strip():
