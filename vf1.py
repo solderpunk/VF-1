@@ -3,6 +3,7 @@
 # (C) 2018 Solderpunk <solderpunk@sdf.org>
 # With contributions from:
 #  - Alex Schroeder <alex@gnu.org>
+#  - Joseph Lyman <tfurrows@sdf.org>
 
 import argparse
 import cmd
