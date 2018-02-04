@@ -376,8 +376,9 @@ class GopherClient(cmd.Cmd):
 
     def _update_history(self, gi):
         # Don't duplicate
-        if self.history and self.history[-1] == gi:
+        if self.history and self.history[self.hist_index] == gi:
             return
+        self.history = self.history[0:self.hist_index+1]
         self.history.append(gi)
         self.hist_index = len(self.history) - 1
 
