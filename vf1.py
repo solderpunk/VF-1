@@ -748,11 +748,12 @@ def send_query(selector, query, host, port=0, tls=False):
 
 # Config file finder
 def get_rcfile():
-    rcfile = os.path.expanduser("~/.vf1rc")
-    if os.path.exists(rcfile):
-        return rcfile
-    else:
-        return None
+    rc_paths = ("~/.config/vf1/vf1rc", "~/.config/.vf1rc", "~/.vf1rc")
+    for rc_path in rc_paths:
+        rcfile = os.path.expanduser(rc_path)
+        if os.path.exists(rcfile):
+            return rcfile
+    return None
 
 # Main function
 def main():
@@ -767,15 +768,19 @@ def main():
     args = parser.parse_args()
 
     gc = GopherClient(tls=args.tls)
+
+    rcfile = get_rcfile()
+    if rcfile:
+        print("Using config %s" % rcfile)
+        with open(rcfile, "r") as fp:
+            gc.cmdqueue = fp.readlines()
+
     print("Welcome to VF-1!")
     if args.tls:
         print("Battloid mode engaged! Watch your back in Gopherspace!")
     else:
         print("Enjoy your flight through Gopherspace...")
-    rcfile = get_rcfile()
-    if rcfile:
-        with open(rcfile, "r") as fp:
-            gc.cmdqueue = fp.readlines()
+
     if args.bookmarks:
         gc.do_bookmarks()
     elif args.url:
