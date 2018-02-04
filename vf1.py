@@ -378,20 +378,19 @@ class GopherClient(cmd.Cmd):
 
     def _format_gopheritem(self, index, gi, name=True, url=False):
         line = "[%d] " % index
-
+        # Add item name, with itemtype indicator for non-text items
         if name:
             line += gi.name
             if gi.itemtype in _ITEMTYPE_TITLES:
                 line += _ITEMTYPE_TITLES[gi.itemtype]
             elif gi.itemtype == "1":
                 line += "/"
-
+        # Add URL if requested
         if url:
             line += " (%s)" % gopheritem_to_url(gi)
-
+        # Colourise
         if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
             line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
-
         return line
 
     def _update_history(self, gi):
@@ -794,6 +793,7 @@ def get_rcfile():
 # Main function
 def main():
 
+    # Parse args
     parser = argparse.ArgumentParser(description='A command line gopher client.')
     parser.add_argument('--bookmarks', action='store_true',
                         help='start with your list of bookmarks')
@@ -803,24 +803,30 @@ def main():
                         help='secure all communications using TLS')
     args = parser.parse_args()
 
+    # Instantiate client
     gc = GopherClient(tls=args.tls)
 
+    # Process config file
     rcfile = get_rcfile()
     if rcfile:
         print("Using config %s" % rcfile)
         with open(rcfile, "r") as fp:
             gc.cmdqueue = fp.readlines()
 
+    # Say hi
     print("Welcome to VF-1!")
     if args.tls:
         print("Battloid mode engaged! Watch your back in Gopherspace!")
     else:
         print("Enjoy your flight through Gopherspace...")
 
+    # Act on args
     if args.bookmarks:
         gc.do_bookmarks()
     elif args.url:
         gc.do_go(args.url)
+
+    # Endless interpret loop
     while True:
         try:
             gc.cmdloop()
