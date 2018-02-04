@@ -670,6 +670,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
 
     def do_save(self, filename):
         """Save most recently visited item to file."""
+        filename = os.path.expanduser(filename)
         if os.path.exists(filename):
             print("File already exists!")
         else:
