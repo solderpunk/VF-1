@@ -270,14 +270,26 @@ class GopherClient(cmd.Cmd):
         self.gi = gi
 
     def get_handler_cmd(self, gi):
+        # First, get mimetype, either from itemtype or filename
         if gi.itemtype in _ITEMTYPE_TO_MIME:
             mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
         else:
             mimetype, encoding = mimetypes.guess_type(gi.path)
+
+        # Now look for a handler for this mimetype
+        # Consider exact matches before wildcard matches
+        exact_matches = []
+        wildcard_matches = []
         for handled_mime, cmd_str in _MIME_HANDLERS.items():
+            if "*" in handled_mime:
+                wildcard_matches.append(handled_mime, cmd_str)
+            else:
+                exact_matches.append(handled_mime, cmd_str)
+        for handled_mime, cmd_str in exact_matches + wildcard_matches:
             if fnmatch.fnmatch(mimetype, handled_mime):
                 break
         else:
+            # Use "strings" as a last resort.
             cmd_str = "strings %d"
         return cmd_str
 
