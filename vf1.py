@@ -178,7 +178,7 @@ class GopherClient(cmd.Cmd):
         # Hit the network
         try:
             # Is this a local file?
-            if gi.host is None:
+            if not gi.host:
                 f = open(gi.path, "rb")
             # Is this a search point?
             elif gi.itemtype == "7":
