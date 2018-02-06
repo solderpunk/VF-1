@@ -671,7 +671,7 @@ Use 'ls -r' to list in reverse order."""
         subprocess.call(("cat %s |" % self.tmp_filename) + line, shell=True)
 
     def do_save(self, filename):
-        """Save most recently visited text item to file."""
+        """Save most recently visited item to file."""
         filename = os.path.expanduser(filename)
         if not filename:
             print("Please provide a filename")
