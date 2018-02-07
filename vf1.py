@@ -128,8 +128,8 @@ def gopheritem_to_url(gi):
         return ""
 
 def gopheritem_from_line(line, tls):
-    line = line.strip()
     name, path, server, port = line.split("\t")
+    port = port.strip()
     itemtype = name[0]
     name = name[1:]
     return GopherItem(server, port, path, itemtype, name, tls)
