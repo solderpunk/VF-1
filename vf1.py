@@ -129,6 +129,9 @@ def gopheritem_to_url(gi):
 
 def gopheritem_from_line(line, tls):
     line = line.strip()
+    # Discard Gopher+ noise
+    if line.endswith("\t+"):
+        line = line[0:-2]
     name, path, server, port = line.split("\t")
     itemtype = name[0]
     name = name[1:]
@@ -354,7 +357,7 @@ class GopherClient(cmd.Cmd):
     def _handle_index(self, f):
         self.index = []
         for line in f:
-            if len(line.split("\t")) != 4:
+            if len(line.split("\t")) not in (4, 5):
                 continue
             if line.startswith("3"):
                 print("Error message from server:")
