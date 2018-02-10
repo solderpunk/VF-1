@@ -236,6 +236,23 @@ class GopherClient(cmd.Cmd):
                 print("Use 'tls' to toggle battloid mode.")
             return
 
+        # Set mode for tmpfile
+        if gi.itemtype in ("0", "1", "7", "h"):
+            mode = "w"
+            encoding = "UTF-8"
+        else:
+            mode = "wb"
+            encoding = None
+
+        # Save the result in a temporary file
+        if self.tmp_filename:
+            os.unlink(self.tmp_filename)
+        tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
+        tmpf.write(f.read())
+        tmpf.close()
+        self.tmp_filename = tmpf.name
+        f.seek(0)
+
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
             self._handle_index(f)
@@ -245,22 +262,6 @@ class GopherClient(cmd.Cmd):
             # Return now so we don't update any further state
             return
         else:
-            if self.tmp_filename:
-                os.unlink(self.tmp_filename)
-
-            # Set mode for tmpfile
-            if gi.itemtype in ("0", "h"):
-                mode = "w"
-                encoding = "UTF-8"
-            else:
-                mode = "wb"
-                encoding = None
-
-            tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
-            tmpf.write(f.read())
-            tmpf.close()
-            self.tmp_filename = tmpf.name
-
             cmd_str = self.get_handler_cmd(gi)
             try:
                 subprocess.call(shlex.split(cmd_str % tmpf.name))
