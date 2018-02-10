@@ -676,7 +676,11 @@ Use 'ls -r' to list in reverse order."""
     def do_save(self, filename):
         """Save most recently visited item to file."""
         filename = os.path.expanduser(filename)
-        if os.path.exists(filename):
+        if not filename:
+            print("Please provide a filename")
+        elif not self.tmp_filename:
+            print("You need to visit a text item, first")
+        elif os.path.exists(filename):
             print("File already exists!")
         else:
             shutil.copyfile(self.tmp_filename, filename)
