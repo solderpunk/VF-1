@@ -53,16 +53,15 @@ _ITEMTYPE_TO_MIME = {
     "0":    "text/plain",
     "h":    "text/html",
     "g":    "image/gif",
-    "I":    "image/jpeg",
-    "s":    "audio/x-wav",
 }
 
 _MIME_HANDLERS = {
-    "text/plain":           "cat %s",
-    "text/html":            "lynx -dump -force_html %s",
-    "image/*":              "feh %s",
-    "audio/*":              "mpg123 %s",
     "application/pdf":      "xpdf %s",
+    "audio/mpeg":           "mpg123 %s",
+    "audio/ogg":            "ogg123 %s",
+    "image/*":              "feh %s",
+    "text/html":            "lynx -dump -force_html %s",
+    "text/plain":           "cat %s",
 }
 
 # Item type formatting stuff
@@ -289,6 +288,20 @@ class GopherClient(cmd.Cmd):
             mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
         else:
             mimetype, encoding = mimetypes.guess_type(gi.path)
+            # Don't permit file extensions to completely override the
+            # vaguer imagetypes
+            if gi.itemtype == "I" and not mimetype.startswith("image"):
+                # The server declares this to be an image.
+                # But it has a weird or missing file extension, so the
+                # MIME type was guessed as something else.
+                # We shall trust the server that it's an image.
+                # Pretend it's a jpeg, because whatever handler the user has
+                # set for jpegs probably has the best shot at handling this.
+                mimetype = "image/jpeg"
+            elif gi.itemtype == "s" and not mimetype.startswith("audio"):
+                # As above, this is "weird audio".
+                # Pretend it's an mp3?
+                mimetype = "audio/mpeg"
 
         # Now look for a handler for this mimetype
         # Consider exact matches before wildcard matches
