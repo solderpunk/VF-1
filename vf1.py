@@ -703,6 +703,10 @@ Use 'ls -r' to list in reverse order."""
             print(self._format_gopheritem(n+offset+1, gi, name, url))
 
     ### Stuff that does something to most recently viewed item
+    def do_cat(self, *args):
+        """Run most recently visited item through "cat" command."""
+        subprocess.call(shlex.split("cat %s" % self._get_active_tmpfile()))
+
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
         subprocess.call(shlex.split("less -R %s" % self._get_active_tmpfile()))
