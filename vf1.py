@@ -382,6 +382,7 @@ class GopherClient(cmd.Cmd):
         tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
         self.idx_filename = tmpf.name
         menu_lines = 0
+        self.page_index = 0
         for line in f:
             if line.startswith("3"):
                 print("Error message from server:")
@@ -403,9 +404,10 @@ class GopherClient(cmd.Cmd):
                 self.index.append(gi)
                 tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
                 menu_lines += 1
+                if menu_lines == self.options["auto_page_threshold"]:
+                    self.page_index = len(self.index)
         self.lookup = self.index
         self.index_index = -1
-        self.page_index = 0
         tmpf.close()
         if self.options["auto_page"]:
             subprocess.call(shlex.split("head -n %d %s" %
