@@ -134,9 +134,6 @@ def gopheritem_from_line(line, tls):
     # Discard Gopher+ noise
     if parts[-1] == "+":
         parts = parts[:-1]
-    # Add empty strings if needed
-    while len(parts) < 4:
-        parts.append("")
     # Attempt to assign variables.  This may fail.
     # It's up to the caller to catch the Exception.
     name, path, server, port = parts
