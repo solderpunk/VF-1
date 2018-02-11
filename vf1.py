@@ -672,6 +672,7 @@ Use 'ls -r' to list in reverse order."""
         show_urls = any((x in options for x in ("-l", "-lr")))
         reverse = any((x in options for x in ("-r", "-lr")))
         self.show_lookup(url = show_urls, reverse = reverse)
+        self.page_index = 0
 
     def do_history(self, *args):
         """Display history."""
