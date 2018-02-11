@@ -164,7 +164,6 @@ class GopherClient(cmd.Cmd):
         self.page_index = 0
         self.lookup = self.index
         self.gi = None
-        self.pwd = None
         self.waypoints = []
         self.marks = {}
 
@@ -261,7 +260,6 @@ class GopherClient(cmd.Cmd):
         if gi.itemtype == "1":
             f.seek(0)
             self._handle_index(f)
-            self.pwd = gi
         elif gi.itemtype == "7":
             f.seek(0)
             self._handle_index(f)
@@ -565,14 +563,14 @@ class GopherClient(cmd.Cmd):
 
     def do_up(self, *args):
         """Go up one directory in the path."""
-        pwd = self.pwd
-        if pwd is None:
+        gi = self.gi
+        if gi is None:
             print("There is no path without a gopher menu")
             return
-        pathbits = os.path.split(pwd.path)
-        newpath = os.path.join(*pathbits[0:-1])
-        gi = GopherItem(pwd.host, pwd.port, newpath, pwd.itemtype, pwd.name, self.tls)
-        self._go_to_gi(gi, update_hist=False)
+        pathbits = os.path.split(self.gi.path)
+        new_path = os.path.join(*pathbits[0:-1])
+        new_gi = GopherItem(gi.host, gi.port, new_path, "1", gi.name, gi.tls)
+        self._go_to_gi(new_gi, update_hist=False)
 
     def do_back(self, *args):
         """Go back to the previous gopher item."""
