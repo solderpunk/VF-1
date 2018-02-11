@@ -156,6 +156,7 @@ class GopherClient(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.set_prompt(tls)
         self.tmp_filename = ""
+        self.idx_filename = ""
         self.index = []
         self.index_index = -1
         self.history = []
@@ -376,13 +377,22 @@ class GopherClient(cmd.Cmd):
 
     def _handle_index(self, f):
         self.index = []
+        if self.idx_filename:
+            os.unlink(self.idx_filename)
+        tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
+        self.idx_filename = tmpf.name
+        menu_lines = 0
         for line in f:
             if line.startswith("3"):
                 print("Error message from server:")
                 print(line[1:].split("\t")[0])
+                tmpf.close()
+                os.unlink(self.idx_filename)
+                self.idx_filename = ""
                 return
             elif line.startswith("i"):
-                print(line[1:].split("\t")[0])
+                tmpf.write(line[1:].split("\t")[0] + "\n")
+                menu_lines += 1
             else:
                 try:
                     gi = gopheritem_from_line(line, self.tls)
@@ -391,17 +401,23 @@ class GopherClient(cmd.Cmd):
                     # lines or things which look like valid menu items
                     continue
                 self.index.append(gi)
-                if (not self.options["auto_page"] or
-                    len(self.index) <= self.options["auto_page_threshold"]):
-                    print(self._format_gopheritem(len(self.index), gi))
+                tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
+                menu_lines += 1
         self.lookup = self.index
         self.index_index = -1
-        if self.options["auto_page"] and len(self.index) > self.options["auto_page_threshold"]:
-            self.page_index = self.options["auto_page_threshold"]
-            print("...")
-            print("(Menu continues, enter blank lines to page through.")
+        self.page_index = 0
+        tmpf.close()
+        if self.options["auto_page"]:
+            subprocess.call(shlex.split("head -n %d %s" %
+                (self.options["auto_page_threshold"],
+                self.idx_filename)))
+            if menu_lines > self.options["auto_page_threshold"]:
+                print("""...
+(Long menu truncated.
+ Use 'cat' or 'less' to view whole menu, including informational messages.
+ Use 'ls', 'search' or blank line pagination to view only menu entries.)""")
         else:
-            self.page_index = 0
+            subprocess.call(shlex.split("cat %s" % self.idx_filename))
 
     def _format_gopheritem(self, index, gi, name=True, url=False):
         line = "[%d] " % index
@@ -427,6 +443,9 @@ class GopherClient(cmd.Cmd):
         self.history = self.history[0:self.hist_index+1]
         self.history.append(gi)
         self.hist_index = len(self.history) - 1
+
+    def _get_active_tmpfile(self):
+        return self.idx_filename if self.gi.itemtype == "1" else self.tmp_filename
 
     # Cmd implementation follows
     def default(self, line):
@@ -686,15 +705,15 @@ Use 'ls -r' to list in reverse order."""
     ### Stuff that does something to most recently viewed item
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
-        subprocess.call(shlex.split("less %s" % self.tmp_filename))
+        subprocess.call(shlex.split("less -R %s" % self._get_active_tmpfile()))
 
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
-        subprocess.call(shlex.split("fold -w 80 -s %s" % self.tmp_filename))
+        subprocess.call(shlex.split("fold -w 80 -s %s" % self._get_active_tmpfile()))
 
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
-        subprocess.call(("cat %s |" % self.tmp_filename) + line, shell=True)
+        subprocess.call(("cat %s |" % self._get_active_tmpfile()) + line, shell=True)
 
     def do_save(self, filename):
         """Save most recently visited item to file."""
@@ -769,6 +788,8 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         # Clean up after ourself
         if self.tmp_filename:
             os.unlink(self.tmp_filename)
+        if self.idx_filename:
+            os.unlink(self.idx_filename)
         print()
         print("Thank you for flying VF-1!")
         sys.exit()
