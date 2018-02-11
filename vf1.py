@@ -259,13 +259,14 @@ class GopherClient(cmd.Cmd):
         tmpf.write(f.read())
         tmpf.close()
         self.tmp_filename = tmpf.name
-        f.seek(0)
 
         # Process that file handler depending upon itemtype
         if gi.itemtype == "1":
+            f.seek(0)
             self._handle_index(f)
             self.pwd = gi
         elif gi.itemtype == "7":
+            f.seek(0)
             self._handle_index(f)
             # Return now so we don't update any further state
             return
