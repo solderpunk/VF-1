@@ -128,11 +128,19 @@ def gopheritem_to_url(gi):
         return ""
 
 def gopheritem_from_line(line, tls):
-    line = line.strip()
+    # Split on tabs.  Strip final element after splitting,
+    # since if we split first we loose empty elements.
+    parts = line.split("\t")
+    parts[-1] = parts[-1].strip()
     # Discard Gopher+ noise
-    if line.endswith("\t+"):
-        line = line[0:-2]
-    name, path, server, port = line.split("\t")
+    if parts[-1] == "+":
+        parts = parts[:-1]
+    # Add empty strings if needed
+    while len(parts) < 4:
+        parts.append("")
+    # Attempt to assign variables.  This may fail.
+    # It's up to the caller to catch the Exception.
+    name, path, server, port = parts
     itemtype = name[0]
     name = name[1:]
     return GopherItem(server, port, path, itemtype, name, tls)
@@ -358,8 +366,6 @@ class GopherClient(cmd.Cmd):
     def _handle_index(self, f):
         self.index = []
         for line in f:
-            if len(line.split("\t")) not in (4, 5):
-                continue
             if line.startswith("3"):
                 print("Error message from server:")
                 print(line[1:].split("\t")[0])
@@ -367,7 +373,12 @@ class GopherClient(cmd.Cmd):
             elif line.startswith("i"):
                 print(line[1:].split("\t")[0])
             else:
-                gi = gopheritem_from_line(line, self.tls)
+                try:
+                    gi = gopheritem_from_line(line, self.tls)
+                except:
+                    # Silently ignore things which are not errors, information
+                    # lines or things which look like valid menu items
+                    continue
                 self.index.append(gi)
                 if (not self.options["auto_page"] or
                     len(self.index) <= self.options["auto_page_threshold"]):
