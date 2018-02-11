@@ -170,7 +170,7 @@ class GopherClient(cmd.Cmd):
 
         self.options = {
             "auto_page" : False,
-            "auto_page_threshold" : 25,
+            "auto_page_threshold" : 40,
             "color_menus" : False,
         }
 
