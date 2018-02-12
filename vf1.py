@@ -270,7 +270,7 @@ class GopherClient(cmd.Cmd):
             try:
                 subprocess.call(shlex.split(cmd_str % tmpf.name))
             except FileNotFoundError:
-                print("Handler program %s not found!" % cmd_str.split()[0])
+                print("Handler program %s not found!" % shlex.split(cmd_str)[0])
                 print("You can use the ! command to specify another handler program or pipeline.")
 
         # Update state
