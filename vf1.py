@@ -402,7 +402,7 @@ class GopherClient(cmd.Cmd):
                 self.index.append(gi)
                 tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
                 menu_lines += 1
-                if menu_lines == self.options["auto_page_threshold"]:
+                if self.options["auto_page"] and menu_lines == self.options["auto_page_threshold"]:
                     self.page_index = len(self.index)
         self.lookup = self.index
         self.index_index = -1
