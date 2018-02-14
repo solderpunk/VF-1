@@ -21,6 +21,7 @@ import tempfile
 import traceback
 import urllib.parse
 import ssl
+import magic
 
 # Command abbreviations
 _ABBREVS = {
@@ -286,7 +287,14 @@ class GopherClient(cmd.Cmd):
             mimetype, encoding = mimetypes.guess_type(gi.path)
             # Don't permit file extensions to completely override the
             # vaguer imagetypes
-            if gi.itemtype == "I" and not mimetype.startswith("image"):
+            if mimetype is None:
+                # No idea what this is, try harder by looking at the
+                # magic number
+                ms = magic.open(magic.MIME)
+                ms.load()
+                tp = ms.file(self.tmp_filename)
+                mimetype, enoding = tp.split("; ")
+            elif gi.itemtype == "I" and not mimetype.startswith("image"):
                 # The server declares this to be an image.
                 # But it has a weird or missing file extension, so the
                 # MIME type was guessed as something else.
@@ -313,7 +321,7 @@ class GopherClient(cmd.Cmd):
                 break
         else:
             # Use "strings" as a last resort.
-            cmd_str = "strings %d"
+            cmd_str = "strings %s"
         return cmd_str
 
     def _decode_text(self, f):
