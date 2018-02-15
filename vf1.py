@@ -286,7 +286,15 @@ class GopherClient(cmd.Cmd):
             mimetype, encoding = mimetypes.guess_type(gi.path)
             # Don't permit file extensions to completely override the
             # vaguer imagetypes
-            if gi.itemtype == "I" and not mimetype.startswith("image"):
+            if mimetype is None:
+                # No idea what this is, try harder by looking at the
+                # magic number using file(1)
+                out = subprocess.run(["file", "--brief", "--mime-type",
+                                      self.tmp_filename],
+                                     stdout=subprocess.PIPE,
+                                     encoding = "UTF-8")
+                mimetype = out.stdout
+            elif gi.itemtype == "I" and not mimetype.startswith("image"):
                 # The server declares this to be an image.
                 # But it has a weird or missing file extension, so the
                 # MIME type was guessed as something else.
@@ -313,7 +321,7 @@ class GopherClient(cmd.Cmd):
                 break
         else:
             # Use "strings" as a last resort.
-            cmd_str = "strings %d"
+            cmd_str = "strings %s"
         return cmd_str
 
     def _decode_text(self, f):
