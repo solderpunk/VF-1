@@ -21,7 +21,6 @@ import tempfile
 import traceback
 import urllib.parse
 import ssl
-import magic
 
 # Command abbreviations
 _ABBREVS = {
@@ -289,11 +288,12 @@ class GopherClient(cmd.Cmd):
             # vaguer imagetypes
             if mimetype is None:
                 # No idea what this is, try harder by looking at the
-                # magic number
-                ms = magic.open(magic.MIME)
-                ms.load()
-                tp = ms.file(self.tmp_filename)
-                mimetype, enoding = tp.split("; ")
+                # magic number using file(1)
+                out = subprocess.run(["file", "--brief", "--mime-type",
+                                      self.tmp_filename],
+                                     stdout=subprocess.PIPE,
+                                     encoding = "UTF-8")
+                mimetype = out.stdout
             elif gi.itemtype == "I" and not mimetype.startswith("image"):
                 # The server declares this to be an image.
                 # But it has a weird or missing file extension, so the
