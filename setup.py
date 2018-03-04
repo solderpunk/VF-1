@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='VF-1',
-    version='0.0.5',
+    version='0.0.6',
     description="Command line gopher client. High speed, low drag.",
     author="Solderpunk",
     author_email="solderpunk@sdf.org",
