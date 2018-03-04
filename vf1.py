@@ -613,7 +613,12 @@ class GopherClient(cmd.Cmd):
 
     def do_tour(self, line):
         """Add index items as waypoints on a tour, which is basically a FIFO
-queue of gopher items. Use tour 1 2 3 4 or ranges like tour 1-4."""
+queue of gopher items.
+
+Items can be added with `tour 1 2 3 4` or ranges like `tour 1-4`.
+All items in current menu can be added with `tour *`.
+Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
+        line = line.strip()
         if not line:
             # Fly to next waypoint on tour
             if not self.waypoints:
@@ -621,8 +626,17 @@ queue of gopher items. Use tour 1 2 3 4 or ranges like tour 1-4."""
             else:
                 gi = self.waypoints.pop(0)
                 self._go_to_gi(gi)
+        elif line == "ls":
+            old_lookup = self.lookup
+            self.lookup = self.waypoints
+            self.show_lookup()
+            self.lookup = old_lookup
+        elif line == "clear":
+            self.waypoints = []
+        elif line == "*":
+            self.waypoints.extend(self.lookup)
         else:
-            for index in line.strip().split():
+            for index in line.split():
                 try:
                     pair = index.split('-')
                     if len(pair) == 1:
