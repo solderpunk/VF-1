@@ -635,6 +635,8 @@ Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
             self.waypoints = []
         elif line == "*":
             self.waypoints.extend(self.lookup)
+        elif looks_like_url(line):
+            self.waypoints.append(url_to_gopheritem(line))
         else:
             for index in line.split():
                 try:
