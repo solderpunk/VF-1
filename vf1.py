@@ -922,6 +922,7 @@ def main():
                 if not url.startswith("gopher://"):
                     url = "gopher://" + url
                 gc.do_tour(url)
+            gc.do_tour("")
 
     # Endless interpret loop
     while True:
