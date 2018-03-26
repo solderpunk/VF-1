@@ -878,7 +878,7 @@ def main():
     parser = argparse.ArgumentParser(description='A command line gopher client.')
     parser.add_argument('--bookmarks', action='store_true',
                         help='start with your list of bookmarks')
-    parser.add_argument('url', metavar='URL', nargs='?',
+    parser.add_argument('url', metavar='URL', nargs='*',
                         help='start with this URL')
     parser.add_argument('--tls', action='store_true',
                         help='secure all communications using TLS')
@@ -915,7 +915,13 @@ def main():
     if args.bookmarks:
         gc.do_bookmarks()
     elif args.url:
-        gc.do_go(args.url)
+        if len(args.url) == 1:
+            gc.do_go(args.url[0])
+        else:
+            for url in args.url:
+                if not url.startswith("gopher://"):
+                    url = "gopher://" + url
+                gc.do_tour(url)
 
     # Endless interpret loop
     while True:
