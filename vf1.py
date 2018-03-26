@@ -176,7 +176,15 @@ class GopherClient(cmd.Cmd):
     def _go_to_gi(self, gi, update_hist=True):
         # Telnet is a completely separate thing
         if gi.itemtype in ("8", "T"):
-            subprocess.call(shlex.split("telnet %s %s" % (gi.host, gi.port)))
+            if gi.path:
+                subprocess.call(shlex.split("telnet -l %s %s %s" % (gi.path, gi.host, gi.port)))
+            else:
+                subprocess.call(shlex.split("telnet %s %s" % (gi.host, gi.port)))
+            if update_hist:
+                self._update_history(gi)
+            return
+        elif gi.itemtype == "S":
+            subprocess.call(shlex.split("ssh %s@%s -p %s" % (gi.path, gi.host, gi.port)))
             if update_hist:
                 self._update_history(gi)
             return
