@@ -892,7 +892,17 @@ def main():
     if rcfile:
         print("Using config %s" % rcfile)
         with open(rcfile, "r") as fp:
-            gc.cmdqueue = fp.readlines()
+            for line in fp:
+                line = line.strip()
+                if ((args.bookmarks or args.url) and
+                    any((line.startswith(x) for x in ("go", "g", "tour", "t")))
+                   ):
+                    if args.bookmarks:
+                        print("Skipping rc command \"%s\" due to --bookmarks option." % line)
+                    else:
+                        print("Skipping rc command \"%s\" due to provided URLs." % line)
+                    continue
+                gc.cmdqueue.append(line)
 
     # Say hi
     print("Welcome to VF-1!")
