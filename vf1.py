@@ -302,11 +302,9 @@ class GopherClient(cmd.Cmd):
             if mimetype is None:
                 # No idea what this is, try harder by looking at the
                 # magic number using file(1)
-                out = subprocess.run(["file", "--brief", "--mime-type",
-                                      self.tmp_filename],
-                                     stdout=subprocess.PIPE,
-                                     encoding = "UTF-8")
-                mimetype = out.stdout
+                out = subprocess.check_output(
+                    shlex.split("file --brief --mime-type %s" % self.tmp_filename))
+                mimetype = out.decode("UTF-8").strip()
             # Don't permit file extensions to completely override the
             # vaguer imagetypes
             if gi.itemtype == "I" and not mimetype.startswith("image"):
