@@ -105,13 +105,16 @@ _ITEMTYPE_COLORS = {
 GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
 
-def url_to_gopheritem(url, itemtype="?"):
+def url_to_gopheritem(url):
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
     if u.path and u.path[0] == '/' and len(u.path) > 1:
         itemtype = u.path[1]
         path = u.path[2:]
+    else:
+        # Use item type 1 for top-level selector
+        itemtype = 1
     return GopherItem(u.hostname, u.port or 70, path,
                       str(itemtype), "<direct URL>",
                       True if u.scheme == "gophers" else False)
@@ -204,19 +207,6 @@ class GopherClient(cmd.Cmd):
             else:
                 f = send_selector(gi.path, gi.host, gi.port or 70, self.tls)
 
-            # Attempt to decode something that is supposed to be text
-            if gi.itemtype in ("0", "1", "7", "h"):
-                try:
-                    f = self._decode_text(f)
-                except UnicodeError:
-                    print("ERROR: Unsupported text encoding!")
-                    return
-
-            # Take a best guess at items with unknown type
-            # (Does this happen anymore?)
-            elif gi.itemtype == "?":
-                gi, f = self._autodetect_itemtype(gi, f)
-
         # Catch network exceptions, which may be recoverable if a redundant
         # mirror is specified
         except (socket.gaierror, ConnectionRefusedError,
@@ -262,6 +252,14 @@ class GopherClient(cmd.Cmd):
                 print("Use 'tls' to toggle battloid mode.")
             return
 
+        # Attempt to decode something that is supposed to be text
+        if gi.itemtype in ("0", "1", "7", "h"):
+            try:
+                f = self._decode_text(f)
+            except UnicodeError:
+                print("ERROR: Unsupported text encoding!")
+                return
+
         # Set mode for tmpfile
         if gi.itemtype in ("0", "1", "7", "h"):
             mode = "w"
@@ -279,14 +277,9 @@ class GopherClient(cmd.Cmd):
         self.tmp_filename = tmpf.name
 
         # Process that file handler depending upon itemtype
-        if gi.itemtype == "1":
+        if gi.itemtype in ("1", "7"):
             f.seek(0)
             self._handle_index(f)
-        elif gi.itemtype == "7":
-            f.seek(0)
-            self._handle_index(f)
-            # Return now so we don't update any further state
-            return
         else:
             cmd_str = self.get_handler_cmd(gi)
             try:
@@ -367,41 +360,6 @@ class GopherClient(cmd.Cmd):
         new_f.write(text)
         new_f.seek(0)
         return new_f
-
-    def _autodetect_itemtype(self, gi, f):
-        # INPUT: gi, f
-        # gi is a GopherItem with an itemtype of ?
-        # f is a non-seekable filelike item returning raw bytes
-        # OUTPUT: gi, f
-        # gi is a GopherItem with known itemtype
-        # f is a seekable filelike item returning Unicode if gi.itemtype
-        # is 0 or 1, or returning raw bytes otherwise
-
-        raw_bytes = io.BytesIO(f.read())
-        try:
-            text = self._decode_text(raw_bytes)
-        except UnicodeError:
-            raw_bytes.seek(0)
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "9", gi.name, gi.tls)
-            return new_gi, raw_bytes
-
-        # If we're here, we know we got text
-        # Is this an index?
-        hits = 0
-        for n, line in enumerate(text.readlines()):
-            if n == 10:
-                break
-            try:
-                junk_gi = gopheritem_from_line(line, self.tls)
-                hits += 1
-            except:
-                continue
-        if hits:
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "1", gi.name, self.tls)
-        else:
-            new_gi = GopherItem(gi.host, gi.port, gi.path, "0", gi.name, self.tls)
-        text.seek(0)
-        return new_gi, text
 
     def _handle_index(self, f):
         self.index = []
@@ -610,7 +568,7 @@ class GopherClient(cmd.Cmd):
                 url = "gopher://" + url
             elif self.tls and not url.startswith("gophers://"):
                 url = "gophers://" + url
-            gi = url_to_gopheritem(url, "?")
+            gi = url_to_gopheritem(url)
             self._go_to_gi(gi)
 
     def do_reload(self, *args):
@@ -656,7 +614,7 @@ class GopherClient(cmd.Cmd):
 
     def do_root(self, *args):
         """Go to root selector of the server hosting current item."""
-        gi = GopherItem(self.gi.host, self.gi.port, "", "?",
+        gi = GopherItem(self.gi.host, self.gi.port, "", "1",
                         "Root of %s" % self.gi.host, self.tls)
         self._go_to_gi(gi)
 
