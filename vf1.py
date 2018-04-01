@@ -215,8 +215,6 @@ class GopherClient(cmd.Cmd):
             # Do we have a redundant mirror we can fall back on?
             new_gi = self._get_mirror_gi(gi)
             if new_gi is not None:
-                print("REDUNDANCY MUST BE FREE!!!")
-                print("Mapped %s to %s" % (gopheritem_to_url(gi), gopheritem_to_url(new_gi)))
                 self._go_to_gi(new_gi)
                 return
             else:
