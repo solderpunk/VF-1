@@ -52,6 +52,7 @@ _ABBREVS = {
 
 # Programs to handle different item types
 _ITEMTYPE_TO_MIME = {
+    "1":    "text/plain",
     "0":    "text/plain",
     "h":    "text/html",
     "g":    "image/gif",
