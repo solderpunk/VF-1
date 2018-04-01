@@ -213,30 +213,29 @@ class GopherClient(cmd.Cmd):
         except (socket.gaierror, ConnectionRefusedError,
                 ConnectionResetError, TimeoutError, socket.timeout,
                 ) as network_error:
-            # Do we have a redundant mirror we can fall back on?
+            # Print an error message
+            if isinstance(network_error, socket.gaierror):
+                print("ERROR: DNS error!")
+            elif isinstance(network_error, ConnectionRefusedError):
+                print("ERROR: Connection refused!")
+            elif isinstance(network_error, ConnectionResetError):
+                print("ERROR: Connection reset!")
+            elif isinstance(network_error, TimeoutError):
+                print("ERROR: Connection timed out!")
+                if self.tls:
+                    print("Disable battloid mode using 'tls' to enter civilian territory.")
+                else:
+                    print("Switch to battloid mode using 'tls' to enable encryption.")
+            elif isinstance(network_error, socket.timeout):
+                print("ERROR: This is taking too long.")
+                if not self.tls:
+                    print("Switch to battloid mode using 'tls' to enable encryption.")
+            # Try to fall back on a redundant mirror
             new_gi = self._get_mirror_gi(gi)
-            if new_gi is not None:
+            if new_gi:
+                print("Trying redundant mirror %s..." % gopheritem_to_url(new_gi))
                 self._go_to_gi(new_gi)
-                return
-            else:
-                # Print an error and give up
-                if isinstance(network_error, socket.gaierror):
-                    print("ERROR: DNS error!")
-                elif isinstance(network_error, ConnectionRefusedError):
-                    print("ERROR: Connection refused!")
-                elif isinstance(network_error, ConnectionResetError):
-                    print("ERROR: Connection reset!")
-                elif isinstance(network_error, TimeoutError):
-                    print("ERROR: Connection timed out!")
-                    if self.tls:
-                        print("Disable battloid mode using 'tls' to enter civilian territory.")
-                    else:
-                        print("Switch to battloid mode using 'tls' to enable encryption.")
-                elif isinstance(network_error, socket.timeout):
-                    print("ERROR: This is taking too long.")
-                    if not self.tls:
-                        print("Switch to battloid mode using 'tls' to enable encryption.")
-                return
+            return
 
         # Catch non-network exceptions
         except OSError:
