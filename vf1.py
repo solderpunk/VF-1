@@ -12,6 +12,7 @@ import fnmatch
 import io
 import mimetypes
 import os.path
+import random
 import shlex
 import shutil
 import socket
@@ -166,6 +167,7 @@ class GopherClient(cmd.Cmd):
         self.gi = None
         self.waypoints = []
         self.marks = {}
+        self.mirrors = {}
 
         self.options = {
             "auto_page" : False,
@@ -215,27 +217,39 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "?":
                 gi, f = self._autodetect_itemtype(gi, f)
 
-        except socket.gaierror:
-            print("ERROR: DNS error!")
-            return
-        except ConnectionRefusedError:
-            print("ERROR: Connection refused!")
-            return
-        except ConnectionResetError:
-            print("ERROR: Connection reset!")
-            if self.tls:
-                print("Disable battloid mode using 'tls' to enter civilian territory.")
+        # Catch network exceptions, which may be recoverable if a redundant
+        # mirror is specified
+        except (socket.gaierror, ConnectionRefusedError,
+                ConnectionResetError, TimeoutError, socket.timeout,
+                ) as network_error:
+            # Do we have a redundant mirror we can fall back on?
+            new_gi = self._get_mirror_gi(gi)
+            if new_gi is not None:
+                print("REDUNDANCY MUST BE FREE!!!")
+                print("Mapped %s to %s" % (gopheritem_to_url(gi), gopheritem_to_url(new_gi)))
+                self._go_to_gi(new_gi)
+                return
             else:
-                print("Switch to battloid mode using 'tls' to enable encryption.")
-            return
-        except TimeoutError:
-            print("ERROR: Connection timed out!")
-            return
-        except socket.timeout:
-            print("ERROR: This is taking too long.")
-            if not self.tls:
-                print("Switch to battloid mode using 'tls' to enable encryption.")
-            return
+                # Print an error and give up
+                if isinstance(network_error, socket.gaierror):
+                    print("ERROR: DNS error!")
+                elif isinstance(network_error, ConnectionRefusedError):
+                    print("ERROR: Connection refused!")
+                elif isinstance(network_error, ConnectionResetError):
+                    print("ERROR: Connection reset!")
+                elif isinstance(network_error, TimeoutError):
+                    print("ERROR: Connection timed out!")
+                    if self.tls:
+                        print("Disable battloid mode using 'tls' to enter civilian territory.")
+                    else:
+                        print("Switch to battloid mode using 'tls' to enable encryption.")
+                elif isinstance(network_error, socket.timeout):
+                    print("ERROR: This is taking too long.")
+                    if not self.tls:
+                        print("Switch to battloid mode using 'tls' to enable encryption.")
+                return
+
+        # Catch non-network exceptions
         except OSError:
             print("ERROR: Operating system error... Recovery initiated...")
             print("Consider toggling battloid mode using 'tls' to adapt to the new situation.")
@@ -415,6 +429,9 @@ class GopherClient(cmd.Cmd):
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
                     continue
+                if gi.itemtype == "+":
+                    self._register_redundant_server(gi)
+                    continue
                 self.index.append(gi)
                 tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
                 menu_lines += 1
@@ -434,6 +451,30 @@ class GopherClient(cmd.Cmd):
  Use 'ls', 'search' or blank line pagination to view only menu entries.)""")
         else:
             subprocess.call(shlex.split("cat %s" % self.idx_filename))
+
+    def _register_redundant_server(self, gi):
+        # This mirrors the last non-mirror item
+        target = self.index[-1]
+        target = (target.host, target.port, target.path)
+        if target not in self.mirrors:
+            self.mirrors[target] = []
+        self.mirrors[target].append((gi.host, gi.port, gi.path))
+
+    def _get_mirror_gi(self, gi):
+        # Search for a redundant mirror that matches this GI
+        for (host, port, path_prefix), mirrors in self.mirrors.items():
+            if (host == gi.host and port == gi.port and
+                gi.path.startswith(path_prefix)):
+                break
+        else:
+        # If there are no mirrors, we're done
+            return None
+        # Pick a mirror at random and build a new GI for it
+        mirror_host, mirror_port, mirror_path = random.sample(mirrors, 1)[0]
+        new_gi = GopherItem(mirror_host, mirror_port,
+                mirror_path + "/" + gi.path[len(path_prefix):],
+                gi.itemtype, gi.name, gi.tls)
+        return new_gi
 
     def _format_gopheritem(self, index, gi, name=True, url=False):
         line = "[%d] " % index
