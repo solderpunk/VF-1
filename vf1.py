@@ -745,7 +745,7 @@ Use 'ls -r' to list in reverse order."""
 
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
-        subprocess.call(shlex.split("fold -w 80 -s %s" % self._get_active_tmpfile()))
+        subprocess.call(shlex.split("fold -w 70 -s %s" % self._get_active_tmpfile()))
 
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
