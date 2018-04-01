@@ -407,7 +407,8 @@ class GopherClient(cmd.Cmd):
  Use 'cat' or 'less' to view whole menu, including informational messages.
  Use 'ls', 'search' or blank line pagination to view only menu entries.)""")
         else:
-            subprocess.call(shlex.split("cat %s" % self.idx_filename))
+            cmd_str = _MIME_HANDLERS["text/plain"]
+            subprocess.call(shlex.split(cmd_str % self.idx_filename))
 
     def _register_redundant_server(self, gi):
         # This mirrors the last non-mirror item
