@@ -741,11 +741,15 @@ Use 'ls -r' to list in reverse order."""
 
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
-        subprocess.call(shlex.split("less -R %s" % self._get_active_tmpfile()))
+        cmd_str = self.get_handler_cmd(self.gi)
+        cmd_str = cmd_str % self._get_active_tmpfile()
+        subprocess.call("%s | less -R" % cmd_str, shell=True)
 
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
-        subprocess.call(shlex.split("fold -w 70 -s %s" % self._get_active_tmpfile()))
+        cmd_str = self.get_handler_cmd(self.gi)
+        cmd_str = cmd_str % self._get_active_tmpfile()
+        subprocess.call("%s | fold -w 70 -s" % cmd_str, shell=True)
 
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
