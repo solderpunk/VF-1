@@ -519,6 +519,14 @@ class GopherClient(cmd.Cmd):
             elif value.lower() == "true":
                 value = True
             self.options[option] = value
+            if "auto_page" in option:
+                print("""********************
+WARNING!!!
+********************
+Support for auto_page functionality is being considered for DEPRECATION
+to keep VF-1 small and simple.  If you are actually using this feature
+and you don't want to see it removed, email solderpunk@sdf.org ASAP.
+********************""")
 
     def do_handler(self, line):
         """View or set handler commands for different MIME types."""
@@ -700,6 +708,14 @@ Use 'ls -r' to list in reverse order."""
         options = line.strip().split()
         show_urls = any((x in options for x in ("-l", "-lr")))
         reverse = any((x in options for x in ("-r", "-lr")))
+        if reverse:
+            print("""********************
+WARNING!!!
+********************
+Support for reverse ls functionality is being considered for DEPRECATION
+to keep VF-1 small and simple.  If you are actually using this feature
+and you don't want to see it removed, email solderpunk@sdf.org ASAP.
+********************""")
         self.show_lookup(url = show_urls, reverse = reverse)
         self.page_index = 0
 
