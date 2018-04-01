@@ -46,6 +46,7 @@ _ABBREVS = {
     "se":   "search",
     "/":    "search",
     "t":    "tour",
+    "u":    "up",
     "v":    "veronica",
 }
 
