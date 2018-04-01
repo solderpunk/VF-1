@@ -259,17 +259,18 @@ class GopherClient(cmd.Cmd):
                 print("ERROR: Unsupported text encoding!")
                 return
 
-        # Set mode for tmpfile
+        # Save the result in a temporary file
+        ## Delete old file
+        if self.tmp_filename:
+            os.unlink(self.tmp_filename)
+        ## Set file mode
         if gi.itemtype in ("0", "1", "7", "h"):
             mode = "w"
             encoding = "UTF-8"
         else:
             mode = "wb"
             encoding = None
-
-        # Save the result in a temporary file
-        if self.tmp_filename:
-            os.unlink(self.tmp_filename)
+        ## Write
         tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
         tmpf.write(f.read())
         tmpf.close()
