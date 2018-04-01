@@ -298,8 +298,6 @@ class GopherClient(cmd.Cmd):
             mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
         else:
             mimetype, encoding = mimetypes.guess_type(gi.path)
-            # Don't permit file extensions to completely override the
-            # vaguer imagetypes
             if mimetype is None:
                 # No idea what this is, try harder by looking at the
                 # magic number using file(1)
@@ -308,7 +306,9 @@ class GopherClient(cmd.Cmd):
                                      stdout=subprocess.PIPE,
                                      encoding = "UTF-8")
                 mimetype = out.stdout
-            elif gi.itemtype == "I" and not mimetype.startswith("image"):
+            # Don't permit file extensions to completely override the
+            # vaguer imagetypes
+            if gi.itemtype == "I" and not mimetype.startswith("image"):
                 # The server declares this to be an image.
                 # But it has a weird or missing file extension, so the
                 # MIME type was guessed as something else.
@@ -760,6 +760,9 @@ Use 'ls -r' to list in reverse order."""
         elif os.path.exists(filename):
             print("File already exists!")
         else:
+            # Don't use _get_active_tmpfile() here, because we want to save the
+            # "source code" of the menu, not the rendered view - this way VF-1
+            # can navigate to it later.
             shutil.copyfile(self.tmp_filename, filename)
 
     def do_url(self, *args):
