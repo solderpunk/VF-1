@@ -180,6 +180,13 @@ class GopherClient(cmd.Cmd):
             "color_menus" : False,
         }
 
+    def set_prompt(self, tls):
+        self.tls = tls
+        if self.tls:
+            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        else:
+            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+
     def _go_to_gi(self, gi, update_hist=True):
         # Telnet is a completely separate thing
         if gi.itemtype in ("8", "T"):
@@ -289,9 +296,9 @@ class GopherClient(cmd.Cmd):
                 print("You can use the ! command to specify another handler program or pipeline.")
 
         # Update state
+        self.gi = gi
         if update_hist:
             self._update_history(gi)
-        self.gi = gi
 
     def get_handler_cmd(self, gi):
         # First, get mimetype, either from itemtype or filename
@@ -393,9 +400,11 @@ class GopherClient(cmd.Cmd):
                 menu_lines += 1
                 if self.options["auto_page"] and menu_lines == self.options["auto_page_threshold"]:
                     self.page_index = len(self.index)
+        tmpf.close()
+
         self.lookup = self.index
         self.index_index = -1
-        tmpf.close()
+
         if self.options["auto_page"]:
             subprocess.call(shlex.split("head -n %d %s" %
                 (self.options["auto_page_threshold"],
@@ -449,6 +458,14 @@ class GopherClient(cmd.Cmd):
         if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
             line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
         return line
+
+    def show_lookup(self, offset=0, end=None, name=True, url=False, reverse=False):
+        if reverse:
+            iterator = enumerate(self.lookup[end:offset:-1])
+        else:
+            iterator = enumerate(self.lookup[offset:end])
+        for n, gi in iterator:
+            print(self._format_gopheritem(n+offset+1, gi, name, url))
 
     def _update_history(self, gi):
         # Don't duplicate
@@ -741,14 +758,6 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         self.show_lookup(offset=i, end=i+10)
         self.page_index += 10
 
-    def show_lookup(self, offset=0, end=None, name=True, url=False, reverse=False):
-        if reverse:
-            iterator = enumerate(self.lookup[end:offset:-1])
-        else:
-            iterator = enumerate(self.lookup[offset:end])
-        for n, gi in iterator:
-            print(self._format_gopheritem(n+offset+1, gi, name, url))
-
     ### Stuff that does something to most recently viewed item
     def do_cat(self, *args):
         """Run most recently visited item through "cat" command."""
@@ -833,13 +842,6 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         else:
             print("Battloid mode disengaged! Switching to unencrypted channels.")
 
-    def set_prompt(self, tls):
-        self.tls = tls
-        if self.tls:
-            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
-        else:
-            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
-        
     ### The end!
     def do_quit(self, *args):
         """Exit VF-1."""
