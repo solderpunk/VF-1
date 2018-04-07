@@ -156,6 +156,16 @@ def gopheritem_to_line(gi, name=""):
 def looks_like_url(word):
     return "." in word and word.startswith(("gopher://", "gophers://"))
 
+# Decorators
+def needs_gi(inner):
+    def outer(self, *args, **kwargs):
+        if not self.gi:
+            print("You need to 'go' somewhere, first")
+            return None
+        else:
+            return inner(self, *args, **kwargs)
+    return outer
+
 class GopherClient(cmd.Cmd):
 
     def __init__(self, tls=False):
@@ -595,11 +605,12 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
             gi = url_to_gopheritem(url)
             self._go_to_gi(gi)
 
+    @needs_gi
     def do_reload(self, *args):
         """Reload the current URL."""
-        if self.gi:
-            self._go_to_gi(self.gi)
+        self._go_to_gi(self.gi)
 
+    @needs_gi
     def do_up(self, *args):
         """Go up one directory in the path."""
         gi = self.gi
@@ -636,6 +647,7 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         self.lookup = self.index
         return self.onecmd(str(self.index_index-1))
 
+    @needs_gi
     def do_root(self, *args):
         """Go to root selector of the server hosting current item."""
         gi = GopherItem(self.gi.host, self.gi.port, "", "1",
@@ -690,12 +702,11 @@ Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
                 except IndexError:
                     print("Invalid index %d, skipping." % n)
 
+    @needs_gi
     def do_mark(self, line):
         """Mark the current item with a single letter.  This letter can then
 be passed to the 'go' command to return to the current item later.
 Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
-        if not self.gi:
-            print("You need to 'go' somewhere, first")
         line = line.strip()
         if not line:
             for mark, gi in self.marks.items():
@@ -759,26 +770,31 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         self.page_index += 10
 
     ### Stuff that does something to most recently viewed item
+    @needs_gi
     def do_cat(self, *args):
         """Run most recently visited item through "cat" command."""
         subprocess.call(shlex.split("cat %s" % self._get_active_tmpfile()))
 
+    @needs_gi
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
         cmd_str = self.get_handler_cmd(self.gi)
         cmd_str = cmd_str % self._get_active_tmpfile()
         subprocess.call("%s | less -R" % cmd_str, shell=True)
 
+    @needs_gi
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
         cmd_str = self.get_handler_cmd(self.gi)
         cmd_str = cmd_str % self._get_active_tmpfile()
         subprocess.call("%s | fold -w 70 -s" % cmd_str, shell=True)
 
+    @needs_gi
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
         subprocess.call(("cat %s |" % self._get_active_tmpfile()) + line, shell=True)
 
+    @needs_gi
     def do_save(self, filename):
         """Save most recently visited item to file."""
         filename = os.path.expanduser(filename)
@@ -794,10 +810,12 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
             # can navigate to it later.
             shutil.copyfile(self.tmp_filename, filename)
 
+    @needs_gi
     def do_url(self, *args):
         """Print URL of most recently visited item."""
         print(gopheritem_to_url(self.gi))
 
+    @needs_gi
     def do_links(self, *args):
         """Extract URLs from most recently visited item."""
         if self.gi.itemtype not in ("0", "h"):
@@ -812,15 +830,13 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         self.show_lookup(name=False, url=True)
 
     ### Bookmarking stuff
+    @needs_gi
     def do_add(self, line):
         """Add the current URL to the bookmarks menu.
 Bookmarks are stored in the ~/.vf1-bookmarks.txt file.
 Optionally, specify the new name for the bookmark."""
-        if not self.gi:
-            print("You need to 'go' somewhere, first")
-        else:
-            with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
-                fp.write(gopheritem_to_line(self.gi, name=line))
+        with open(os.path.expanduser("~/.vf1-bookmarks.txt"), "a") as fp:
+            fp.write(gopheritem_to_line(self.gi, name=line))
 
     def do_bookmarks(self, *args):
         """Show the current bookmarks menu.
