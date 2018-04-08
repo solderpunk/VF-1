@@ -206,7 +206,7 @@ class GopherClient(cmd.Cmd):
         else:
             self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
 
-    def _go_to_gi(self, gi, update_hist=True):
+    def _go_to_gi(self, gi, update_hist=True, query_str=None):
         # Telnet is a completely separate thing
         if gi.itemtype in ("8", "T"):
             if gi.path:
@@ -230,7 +230,8 @@ class GopherClient(cmd.Cmd):
                 f = open(gi.path, "rb")
             # Is this a search point?
             elif gi.itemtype == "7":
-                query_str = input("Query term: ")
+                if not query_str:
+                    query_str = input("Query term: ")
                 f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls)
             else:
                 f = send_selector(gi.path, gi.host, gi.port or 70, self.tls)
@@ -746,9 +747,8 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
     def do_veronica(self, line):
         # Don't tell Betty!
         """Submit a search query to the Veronica 2 search engine."""
-        f = send_query("/v2/vs", line, "gopher.floodgap.com", 70)
-        f = self._decode_text(f)
-        self._handle_index(f)
+        veronica = url_to_gopheritem("gopher://gopher.floodgap.com:70/7/v2/vs")
+        self._go_to_gi(veronica, query_str = line)
 
     ### Stuff that modifies the lookup table
     def do_ls(self, line):
