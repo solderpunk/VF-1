@@ -24,6 +24,13 @@ import traceback
 import urllib.parse
 import ssl
 
+# Use chardet if it's there, but don't depend on it
+try:
+    import chardet
+    _HAS_CHARDET = True
+except ImportError:
+    _HAS_CHARDET = False
+
 # Command abbreviations
 _ABBREVS = {
     "a":    "add",
@@ -357,18 +364,30 @@ class GopherClient(cmd.Cmd):
         return cmd_str
 
     def _decode_text(self, f):
-        # Attempt to decode some bytes into Unicode according to the three
-        # most commonly used encodings on the web.  These 3 cover 95% of
-        # web content, so hopefully will work well in Goperhspace.  If none
-        # of these encodings work, raise UnicodeError
+        # Attempt to decode some bytes into a Unicode string.
+        # First of all, try UTF-8 as the default.
+        # If this fails, attempt to autodetect the encoding if chardet
+        # library is installed.
+        # If chardet is not installed, or fails to work, fall back on
+        # the user-specified alternate encoding.
+        # If none of this works, this will raise UnicodeError and it's
+        # up to the caller to handle it gracefully.
+        # If none of this works, this will raise UnicodeError and it's
+        # up to the caller to handle it gracefully.
         raw_bytes = f.read()
         # Try UTF-8 first:
         try:
             text = raw_bytes.decode("UTF-8")
         except UnicodeError:
-            # If we have chardet...
-            if False:
-                pass
+            # If we have chardet, try the magic
+            if _HAS_CHARDET:
+                autodetect = chardet.detect(raw_bytes)
+                # Make sure we're vaguely certain
+                if autodetect["confidence"] > 0.5:
+                    text = raw_bytes.decode(autodetect["encoding"])
+                else:
+                    # Try the user-specified encoding
+                    text = raw_bytes.decode(self.options["encoding"])
             else:
                 # Try the user-specified encoding
                 text = raw_bytes.decode(self.options["encoding"])
