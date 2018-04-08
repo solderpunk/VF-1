@@ -7,6 +7,7 @@
 
 import argparse
 import cmd
+import codecs
 import collections
 import fnmatch
 import io
@@ -188,6 +189,7 @@ class GopherClient(cmd.Cmd):
             "auto_page" : False,
             "auto_page_threshold" : 40,
             "color_menus" : False,
+            "encoding" : "iso-8859-1",
         }
 
     def set_prompt(self, tls):
@@ -359,18 +361,17 @@ class GopherClient(cmd.Cmd):
         # most commonly used encodings on the web.  These 3 cover 95% of
         # web content, so hopefully will work well in Goperhspace.  If none
         # of these encodings work, raise UnicodeError
-        encodings = ["UTF-8", "iso-8859-1", "cp-1251"]
         raw_bytes = f.read()
-        while True:
-            enc = encodings.pop(0)
-            try:
-                text = raw_bytes.decode(enc)
-                break
-            except UnicodeError as e:
-                if not encodings:
-                    # No encodings left to try, so reraise UnicodeError and
-                    # let the caller handle it
-                    raise e
+        # Try UTF-8 first:
+        try:
+            text = raw_bytes.decode("UTF-8")
+        except UnicodeError:
+            # If we have chardet...
+            if False:
+                pass
+            else:
+                # Try the user-specified encoding
+                text = raw_bytes.decode(self.options["encoding"])
         new_f = io.StringIO()
         new_f.write(text)
         new_f.seek(0)
@@ -538,6 +539,12 @@ class GopherClient(cmd.Cmd):
             if option not in self.options:
                 print("Unrecognised option %s" % option)
                 return
+            elif option == "encoding":
+                try:
+                    codecs.lookup(value)
+                except LookupError:
+                    print("Unknown encoding %s" % value)
+                    return
             elif value.isnumeric():
                 value = int(value)
             elif value.lower() == "false":
