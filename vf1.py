@@ -282,7 +282,10 @@ class GopherClient(cmd.Cmd):
             try:
                 f = self._decode_text(f)
             except UnicodeError:
-                print("ERROR: Unsupported text encoding!")
+                print("""ERROR: Unknown text encoding!
+If you know the correct encoding, use e.g. 'set encoding koi8-r' and
+try again.  Otherwise, install the 'chardet' library for Python 3 to
+enable automatic encoding detection.""")
                 return
 
         # Save the result in a temporary file
@@ -370,8 +373,6 @@ class GopherClient(cmd.Cmd):
         # library is installed.
         # If chardet is not installed, or fails to work, fall back on
         # the user-specified alternate encoding.
-        # If none of this works, this will raise UnicodeError and it's
-        # up to the caller to handle it gracefully.
         # If none of this works, this will raise UnicodeError and it's
         # up to the caller to handle it gracefully.
         raw_bytes = f.read()
