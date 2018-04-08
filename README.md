@@ -1,27 +1,7 @@
 # VF-1
 Command line gopher client.  High speed, low drag.
 
-## Invocation
-
-Start VF-1:
-
-```
-vf1
-```
-
-Start VF-1 with your bookmarks:
-
-```
-vf1 --bookmarks
-```
-
-Start VF-1 with your favourite site:
-
-```
-vf1 phlogosphere.org
-```
-
-## Installing
+## Installation
 
 Ideally, you would install VF-1 as follows:
 
@@ -56,6 +36,26 @@ file directly.
 
 ```
 python3 vf1.py
+```
+
+## Invocation
+
+Start VF-1:
+
+```
+vf1
+```
+
+Start VF-1 with your bookmarks:
+
+```
+vf1 --bookmarks
+```
+
+Start VF-1 with your favourite site:
+
+```
+vf1 phlogosphere.org
 ```
 
 ## Quick, informal tutorial-style introduction
@@ -299,3 +299,119 @@ To make a few implicit concepts explicit:
   then.  Commands like "fold", "less" and "save" operate on the most recently
   visited *document*, even if you have visited some menus since then.  Basically
   everything operates one the most recently seen thing of the appropriate type.
+
+## Handlers
+
+VF-1 uses external programs as "handlers" to present gopherspace content to you.
+Even when you visit a plain text file with item type 0, VF-1 spawns (by default)
+the unix command `cat` to display that file on your screen, rather than using a
+Python `print` call.  You have full control over which external programs are
+used for different content, so you can customise your user experience.
+
+Handlers are assigned on the basis of MIME types.  The gopher protocol has no
+concept of MIME, so VF-1 assigns each item a MIME type as follows:
+
+* Item types 0 and 1 are assigned MIME type `text/plain`
+* Item type h is assigned MIME type `text/html`
+* Item type g is assigned MIME type `image/gif`
+
+For all other item types, VF-1 attempts to guess a MIME type from the file
+extension of the last component of the selector, using the
+[mimetypes](https://docs.python.org/3.5/library/mimetypes.html) module from the
+Python standard library.  This usually results in a reliable identification
+assuming the file has an extension and the author of the gopehr content is not
+actively trying to deceive you.
+
+If the selector has no file extension, or the extension is not recognised by the
+`itemtypes` module, VF-1 will use the unix program `file` to attempt to guess a
+MIME type by actually inspecting the content of the file.
+
+In accordance with the idea that gopher item types, which are a standard part of
+the protocol, should take precedence over any other attempt at inferring MIME type,
+which is not a standard part of the protocol, if an item in gopherspace is
+listed with itemtype "I" or "s" and one of the above methods returns a MIME type
+which does not begin with "image/" or "sound/" respectively, VF-1 will default
+to "image/jpeg" or "audio/mpeg" respectively.  This should only happen in highly
+unusual circumstances and suggests a poorly or maliciously configured gopher
+server.
+
+Once a MIME type has been identified for an item, an appropriate handler program
+will be used to handle the content.  You can view a list of the current handler
+assignments at any time by running the `handler` command.  The default handlers
+that ship with VF-1 are:
+ 
+* application/pdf:      `xpdf %s`
+* audio/mpeg:           `mpg123 %s`
+* audio/ogg:            `ogg123 %s`
+* image/*:              `feh %s"`
+* text/html:            `lynx -dump -force_html %s"`
+* text/plain:           `cat %s"`
+
+You can also use the `handler` command to change these handlers, or set handlers
+for new MIME types For example, if you prefer using `w3m` over `lynx` for
+handling HTML content, you could run:
+
+```
+VF-1> handler text/html w3m -dump %s
+```
+
+You can use the `*` wildcard when specifying handler MIME types, such as
+`image/*` to use a single program to handle any kind of image.  Handlers
+without wildcards take precedence over handlers with wildcards.  In other
+words, if you specify, e.g. one handler for `image/jpeg` and a different handler
+for `image/*`, the `image/jpeg` handler will be used for JPEGs and the
+`image/*` handler will be used for all other
+images.
+
+## Text encoding
+
+VF-1 attempts to decode the content received for any text-based item types
+(e.g. 0, 1, 7, h) as UTF-8.  Most content in gopherspace is ASCII-encoded, and
+since UTF-8 is backward compatible with ASCII, this will generally "just work".
+If the received content *cannot* be decoded as UTF-8, one of two possible
+things will happen.
+
+If the [chardet](https://pypi.python.org/pypi/chardet) Python module is
+installed on your system, VF-1 will use it to attempt to automatically detect
+the encoding used and decode the text appropriately.  Note that pip etc. will
+not install chardet for you when you install VF-1, as VF-1 does not formally
+depend on chardet.  It uses it opportunistically, so that it can still be
+easily installed and used on systems where chardet is not / cannot be installed.
+
+If chardet is not installed, or if chardet cannot identify an encoding with
+confidence exceeding 0.5, VF-1 will attempt to fall back to a single,
+user-specified alternative encoding.  This encoding can be set with, e.g.:
+
+```
+VF-1> set encoding koi8-r
+```
+
+The default fall back encoding is iso-8559-1, which is used by the popular
+gopher site floodgap.com.  If you routinely visit gopher sites encoded with some
+other encoding, consider using an RC file (see below) to automatically set your
+alternative encoding at start up.
+
+## RC file
+
+Upon startup, VF-1 will search for a file with one of the following names:
+
+* ~/.config/vf1/vf1rc
+* ~/.config/.vf1rc
+* ~/.vf1rc
+
+The names are listed above in order of preference and VF-1 will stop after the
+first one it finds, e.g. if you have both a `~/.config/vf1/vf1rc` and a
+`~/.vf1rc` then `~/.vf1rc` will be ignored.
+
+If such a file is found, each line of the file will be executed as a VF-1
+command before the prompt is displayed.  This allows you to script certain
+commands that you want to be run every time you start VF-1.  This lets you:
+
+* Permanently configure item type handlers by putting `handler` commands in the
+  RC file.
+* Permanently configure any options, such as whether or not to use coloured
+  output or your preferred non-UTF-8 encoding, by putting `set` commands in the
+  RC file.
+* Set a "home page" by putting a `go` command in the RC file.
+* Start a tour through your favourite sites by putting `tour` commands in the RC
+  file.
