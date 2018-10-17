@@ -172,6 +172,7 @@ def needs_gi(inner):
             return None
         else:
             return inner(self, *args, **kwargs)
+    outer.__doc__ = inner.__doc__
     return outer
 
 class GopherClient(cmd.Cmd):
