@@ -886,6 +886,16 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         else:
             print("Battloid mode disengaged! Switching to unencrypted channels.")
 
+    ### Help
+    def do_help(self, arg):
+        """ALARM! Recursion detected! ALARM! Prepare to eject!"""
+        if arg == "!":
+            print("! is an alias for 'shell'")
+        elif arg == "?":
+            print("? is an alias for 'help'")
+        else:
+            cmd.Cmd.do_help(self, arg)
+
     ### The end!
     def do_quit(self, *args):
         """Exit VF-1."""
