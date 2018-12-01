@@ -282,6 +282,10 @@ class GopherClient(cmd.Cmd):
         if gi.itemtype in ("0", "1", "7", "h"):
             try:
                 f = self._decode_text(f)
+            except socket.timeout:
+                print("ERROR: Timed out... Scrambling frequencies...")
+                print("Stealth status compromised; enter battloid mode using 'tls'.")
+                return
             except UnicodeError:
                 print("""ERROR: Unknown text encoding!
 If you know the correct encoding, use e.g. 'set encoding koi8-r' and
