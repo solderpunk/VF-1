@@ -172,6 +172,7 @@ def needs_gi(inner):
             return None
         else:
             return inner(self, *args, **kwargs)
+    outer.__doc__ = inner.__doc__
     return outer
 
 class GopherClient(cmd.Cmd):
@@ -884,6 +885,16 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             print("Battloid mode engaged! Only accepting encrypted connections.")
         else:
             print("Battloid mode disengaged! Switching to unencrypted channels.")
+
+    ### Help
+    def do_help(self, arg):
+        """ALARM! Recursion detected! ALARM! Prepare to eject!"""
+        if arg == "!":
+            print("! is an alias for 'shell'")
+        elif arg == "?":
+            print("? is an alias for 'help'")
+        else:
+            cmd.Cmd.do_help(self, arg)
 
     ### The end!
     def do_quit(self, *args):
