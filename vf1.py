@@ -695,16 +695,23 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         """Download an index item to a file with the specified path.
 For example, `download 5 foo.txt` will download link five to the file
 `foo.txt` as a bytestream without performing any sort of processing."""
+        args = line.strip().split()
+        if len(args) == 2:
+            index, path = args
+        else:
+            index = args[0]
+            path = None
         try:
-            params = line.strip().split()
-            (nstr, path) = params 
+            index = int(index)
         except ValueError:
-            print("Download needs exactly two parameters: an item item and a path.")
+            print("First argument to `download` needs to be a numeric index.")
             return
         try:
             last_gi = self.gi
-            gi = self.lookup[int(nstr)-1]._replace(itemtype = "9") # Force filetype to be binary
+            gi = self.lookup[index-1]
             self._go_to_gi(gi, update_hist = False, handle = False)
+            if not path:
+                path = os.path.basename(gi.path)
             self.do_save(path)
             self.gi = last_gi
         except IndexError:
