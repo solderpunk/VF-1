@@ -37,6 +37,7 @@ _ABBREVS = {
     "b":    "back",
     "bm":   "bookmarks",
     "book": "bookmarks",
+    "dl":   "download",
     "f":    "fold",
     "fo":   "forward",
     "g":    "go",
@@ -62,12 +63,14 @@ _ABBREVS = {
 _ITEMTYPE_TO_MIME = {
     "1":    "text/plain",
     "0":    "text/plain",
+    "9":    "application/octet-stream",
     "h":    "text/html",
     "g":    "image/gif",
 }
 
 _MIME_HANDLERS = {
     "application/pdf":      "xpdf %s",
+    "application/octet-stream": "xdg-open %s",
     "audio/mpeg":           "mpg123 %s",
     "audio/ogg":            "ogg123 %s",
     "image/*":              "feh %s",
@@ -207,7 +210,7 @@ class GopherClient(cmd.Cmd):
         else:
             self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
 
-    def _go_to_gi(self, gi, update_hist=True, query_str=None):
+    def _go_to_gi(self, gi, update_hist=True, query_str=None, suppress_processing=False):
         # Telnet is a completely separate thing
         if gi.itemtype in ("8", "T"):
             if gi.path:
@@ -311,17 +314,20 @@ enable automatic encoding detection.""")
         tmpf.close()
         self.tmp_filename = tmpf.name
 
-        # Process that file handler depending upon itemtype
-        if gi.itemtype in ("1", "7"):
-            f.seek(0)
-            self._handle_index(f)
-        else:
-            cmd_str = self.get_handler_cmd(gi)
-            try:
-                subprocess.call(shlex.split(cmd_str % tmpf.name))
-            except FileNotFoundError:
-                print("Handler program %s not found!" % shlex.split(cmd_str)[0])
-                print("You can use the ! command to specify another handler program or pipeline.")
+        # Suppress processing if requested; this is useful for files you wish to
+        # download without opening.
+        if not suppress_processing:
+            # Process that file handler depending upon itemtype
+            if gi.itemtype in ("1", "7"):
+                f.seek(0)
+                self._handle_index(f)
+            else:
+                cmd_str = self.get_handler_cmd(gi)
+                try:
+                    subprocess.call(shlex.split(cmd_str % tmpf.name))
+                except FileNotFoundError:
+                    print("Handler program %s not found!" % shlex.split(cmd_str)[0])
+                    print("You can use the ! command to specify another handler program or pipeline.")
 
         # Update state
         self.gi = gi
@@ -686,6 +692,27 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
         gi = GopherItem(self.gi.host, self.gi.port, "", "1",
                         "Root of %s" % self.gi.host, self.tls)
         self._go_to_gi(gi)
+
+    def do_download(self, line):
+        """Download an index item to a file with the specified path.
+For example, `download 5 foo.txt` will download link five to the file
+`foo.txt` as a bytestream without performing any sort of processing."""
+        try:
+            params = line.strip().split()
+            (nstr, path) = params 
+        except ValueError:
+            print("Download needs exactly two parameters: an item item and a path.")
+            return
+        try:
+            last_gi = self.gi
+            gi = self.lookup[int(nstr)-1]._replace(itemtype = "9") # Force filetype to be binary
+            self._go_to_gi(gi, update_hist = False, suppress_processing = True)
+            self.do_save(path)
+            self.gi = last_gi
+        except IndexError:
+            print ("Index too high!")
+        except ValueError:
+            print("Couldn't parse {0} as an index.".format(nstr))
 
     def do_tour(self, line):
         """Add index items as waypoints on a tour, which is basically a FIFO
