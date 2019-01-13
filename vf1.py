@@ -70,7 +70,6 @@ _ITEMTYPE_TO_MIME = {
 
 _MIME_HANDLERS = {
     "application/pdf":      "xpdf %s",
-    "application/octet-stream": "xdg-open %s",
     "audio/mpeg":           "mpg123 %s",
     "audio/ogg":            "ogg123 %s",
     "image/*":              "feh %s",
@@ -374,8 +373,8 @@ enable automatic encoding detection.""")
             if fnmatch.fnmatch(mimetype, handled_mime):
                 break
         else:
-            # Use "strings" as a last resort.
-            cmd_str = "strings %s"
+            # Use "xdg-open" as a last resort.
+            cmd_str = "xdg-open %s"
         return cmd_str
 
     def _decode_text(self, f):
