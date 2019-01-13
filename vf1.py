@@ -4,6 +4,7 @@
 # With contributions from:
 #  - Alex Schroeder <alex@gnu.org>
 #  - Joseph Lyman <tfurrows@sdf.org>
+#  - Adam Mayer (https://github.com/phooky)
 
 import argparse
 import cmd
