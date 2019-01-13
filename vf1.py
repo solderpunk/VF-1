@@ -500,12 +500,8 @@ enable automatic encoding detection.""")
             line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
         return line
 
-    def show_lookup(self, offset=0, end=None, name=True, url=False, reverse=False):
-        if reverse:
-            iterator = enumerate(self.lookup[end:offset:-1])
-        else:
-            iterator = enumerate(self.lookup[offset:end])
-        for n, gi in iterator:
+    def show_lookup(self, offset=0, end=None, name=True, url=False):
+        for n, gi in enumerate(self.lookup[offset:end]):
             print(self._format_gopheritem(n+offset+1, gi, name, url))
 
     def _update_history(self, gi):
@@ -790,24 +786,14 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
     ### Stuff that modifies the lookup table
     def do_ls(self, line):
         """List contents of current index.
-Use 'ls -l' to see URLs.
-Use 'ls -r' to list in reverse order."""
+Use 'ls -l' to see URLs."""
         self.lookup = self.index
         # If we add any more options to ls, we'll have to use argparse
         # again here, but I hope the options don't explode, and for just
         # two, the below seems good enough.
         options = line.strip().split()
         show_urls = any((x in options for x in ("-l", "-lr")))
-        reverse = any((x in options for x in ("-r", "-lr")))
-        if reverse:
-            print("""********************
-WARNING!!!
-********************
-Support for reverse ls functionality is being considered for DEPRECATION
-to keep VF-1 small and simple.  If you are actually using this feature
-and you don't want to see it removed, email solderpunk@sdf.org ASAP.
-********************""")
-        self.show_lookup(url = show_urls, reverse = reverse)
+        self.show_lookup(url = show_urls)
         self.page_index = 0
 
     def do_history(self, *args):
