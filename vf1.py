@@ -209,7 +209,7 @@ class GopherClient(cmd.Cmd):
         else:
             self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
 
-    def _go_to_gi(self, gi, update_hist=True, query_str=None, suppress_processing=False):
+    def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
         # Telnet is a completely separate thing
         if gi.itemtype in ("8", "T"):
             if gi.path:
@@ -313,9 +313,8 @@ enable automatic encoding detection.""")
         tmpf.close()
         self.tmp_filename = tmpf.name
 
-        # Suppress processing if requested; this is useful for files you wish to
-        # download without opening.
-        if not suppress_processing:
+        # Pass file to handler, unless we were asked not to
+        if handle:
             # Process that file handler depending upon itemtype
             if gi.itemtype in ("1", "7"):
                 f.seek(0)
@@ -705,7 +704,7 @@ For example, `download 5 foo.txt` will download link five to the file
         try:
             last_gi = self.gi
             gi = self.lookup[int(nstr)-1]._replace(itemtype = "9") # Force filetype to be binary
-            self._go_to_gi(gi, update_hist = False, suppress_processing = True)
+            self._go_to_gi(gi, update_hist = False, handle = False)
             self.do_save(path)
             self.gi = last_gi
         except IndexError:
