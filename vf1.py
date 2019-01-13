@@ -64,7 +64,6 @@ _ABBREVS = {
 _ITEMTYPE_TO_MIME = {
     "1":    "text/plain",
     "0":    "text/plain",
-    "9":    "application/octet-stream",
     "h":    "text/html",
     "g":    "image/gif",
 }
