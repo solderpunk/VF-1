@@ -38,7 +38,6 @@ _ABBREVS = {
     "b":    "back",
     "bm":   "bookmarks",
     "book": "bookmarks",
-    "dl":   "download",
     "f":    "fold",
     "fo":   "forward",
     "g":    "go",
@@ -687,34 +686,6 @@ and you don't want to see it removed, email solderpunk@sdf.org ASAP.
                         "Root of %s" % self.gi.host, self.tls)
         self._go_to_gi(gi)
 
-    def do_download(self, line):
-        """Download an index item to a file with the specified path.
-For example, `download 5 foo.txt` will download link five to the file
-`foo.txt` as a bytestream without performing any sort of processing."""
-        args = line.strip().split()
-        if len(args) == 2:
-            index, path = args
-        else:
-            index = args[0]
-            path = None
-        try:
-            index = int(index)
-        except ValueError:
-            print("First argument to `download` needs to be a numeric index.")
-            return
-        try:
-            last_gi = self.gi
-            gi = self.lookup[index-1]
-            self._go_to_gi(gi, update_hist = False, handle = False)
-            if not path:
-                path = os.path.basename(gi.path)
-            self.do_save(path)
-            self.gi = last_gi
-        except IndexError:
-            print ("Index too high!")
-        except ValueError:
-            print("Couldn't parse {0} as an index.".format(nstr))
-
     def do_tour(self, line):
         """Add index items as waypoints on a tour, which is basically a FIFO
 queue of gopher items.
@@ -845,20 +816,91 @@ Use 'ls -l' to see URLs."""
         subprocess.call(("cat %s |" % self._get_active_tmpfile()) + line, shell=True)
 
     @needs_gi
-    def do_save(self, filename):
-        """Save most recently visited item to file."""
-        filename = os.path.expanduser(filename)
+    def do_save(self, line):
+        """Save an item to the filesystem.
+'save n filename' saves menu item n to the specified filename.
+'save filename' saves the last viewed item to the specified filename.
+'save n' saves menu item n to an automagic filename."""
+        args = line.strip().split()
+
+        # First things first, figure out what our arguments are
+        if len(args) == 0:
+            # No arguments given at all
+            # Save current item, if there is one, to a file whose name is
+            # inferred from the gopher path
+            if not self.tmp_filename:
+                print("You need to visit an item first!")
+                return
+            else:
+                index = None
+                filename = None
+        elif len(args) == 1:
+            # One argument given
+            # If it's numeric, treat it as an index, and infer the filename
+            try:
+                index = int(args[0])
+                filename = None
+            # If it's not numeric, treat it as a filename and
+            # save the current item
+            except ValueError:
+                index = None
+                filename = os.path.expanduser(args[0])
+        elif len(args) == 2:
+            # Two arguments given
+            # Treat first as an index and second as filename
+            index, filename = args
+            try:
+                index = int(index)
+            except ValueError:
+                print("First argument is not a valid item index!")
+                return
+            filename = os.path.expanduser(filename)
+        else:
+            print("You must provide an index, a filename, or both.")
+            return
+
+        # Next, fetch the item to save, if it's not the current one.
+        if index != None:
+            last_gi = self.gi
+            try:
+                gi = self.lookup[index-1]
+                self._go_to_gi(gi, update_hist = False, handle = False)
+            except IndexError:
+                print ("Index too high!")
+                self.gi = last_gi
+                return
+
+        # Derive filename from current GI's path, if one hasn't been set
         if not filename:
-            print("Please provide a filename")
-        elif not self.tmp_filename:
-            print("You need to visit a text item, first")
-        elif os.path.exists(filename):
+            if self.gi.itemtype == '1':
+                path = self.gi.path
+                if path in ("", "/"):
+                    # Attempt to derive a nice filename from the gopher
+                    # item name
+                    filename = gi.name.lower().replace(" ","_") + ".txt"
+                else:
+                    # Derive a filename from the last component of the
+                    # path
+                    if path.endswith("/"):
+                        path = path[0:-1]
+                    filename = os.path.split(path)[1]
+            else:
+                filename = os.path.basename(self.gi.path)
+            print("Set filename to: " + filename)
+
+        # Check for filename collisions and actually do the save if safe
+        if os.path.exists(filename):
             print("File already exists!")
         else:
             # Don't use _get_active_tmpfile() here, because we want to save the
-            # "source code" of the menu, not the rendered view - this way VF-1
+            # "source code" of menus, not the rendered view - this way VF-1
             # can navigate to it later.
             shutil.copyfile(self.tmp_filename, filename)
+            print("Saved to %s" % filename)
+
+        # Restore gi if necessary
+        if index != None:
+            self._go_to_gi(last_gi)
 
     @needs_gi
     def do_url(self, *args):
