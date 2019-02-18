@@ -995,7 +995,8 @@ Returns a binary file with the reply."""
         port = DEF_PORT
     elif type(port) == type(''):
         port = int(port)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    addrinfo = socket.getaddrinfo(host, port, type=1)
+    s = socket.socket(addrinfo[0][0], socket.SOCK_STREAM)
     if tls:
         context = ssl.create_default_context()
         # context.check_hostname = False
