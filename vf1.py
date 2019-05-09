@@ -401,6 +401,8 @@ enable automatic encoding detection.""")
             else:
                 # Try the user-specified encoding
                 text = raw_bytes.decode(self.options["encoding"])
+        if not text.endswith("\n"):
+            text += CRLF
         new_f = io.StringIO()
         new_f.write(text)
         new_f.seek(0)
