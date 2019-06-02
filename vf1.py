@@ -195,8 +195,6 @@ class GopherClient(cmd.Cmd):
         self.mirrors = {}
 
         self.options = {
-            "auto_page" : False,
-            "auto_page_threshold" : 40,
             "color_menus" : False,
             "encoding" : "iso-8859-1",
         }
@@ -440,25 +438,13 @@ enable automatic encoding detection.""")
                 self.index.append(gi)
                 tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
                 menu_lines += 1
-                if self.options["auto_page"] and menu_lines == self.options["auto_page_threshold"]:
-                    self.page_index = len(self.index)
         tmpf.close()
 
         self.lookup = self.index
         self.index_index = -1
 
-        if self.options["auto_page"]:
-            subprocess.call(shlex.split("head -n %d %s" %
-                (self.options["auto_page_threshold"],
-                self.idx_filename)))
-            if menu_lines > self.options["auto_page_threshold"]:
-                print("""...
-(Long menu truncated.
- Use 'cat' or 'less' to view whole menu, including informational messages.
- Use 'ls', 'search' or blank line pagination to view only menu entries.)""")
-        else:
-            cmd_str = _MIME_HANDLERS["text/plain"]
-            subprocess.call(shlex.split(cmd_str % self.idx_filename))
+        cmd_str = _MIME_HANDLERS["text/plain"]
+        subprocess.call(shlex.split(cmd_str % self.idx_filename))
 
     def _register_redundant_server(self, gi):
         # This mirrors the last non-mirror item
@@ -579,14 +565,6 @@ enable automatic encoding detection.""")
             elif value.lower() == "true":
                 value = True
             self.options[option] = value
-            if "auto_page" in option:
-                print("""********************
-WARNING!!!
-********************
-Support for auto_page functionality is being considered for DEPRECATION
-to keep VF-1 small and simple.  If you are actually using this feature
-and you don't want to see it removed, email solderpunk@sdf.org ASAP.
-********************""")
 
     def do_handler(self, line):
         """View or set handler commands for different MIME types."""
