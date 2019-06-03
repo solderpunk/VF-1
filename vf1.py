@@ -117,7 +117,11 @@ GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
 
 def url_to_gopheritem(url):
-    u = urllib.parse.urlparse(url)
+    if "::" in url and "/" not in url[len("gopher://"):]:
+        # Naked IPv6
+        u = collections.namedtuple("FakeUrl",("scheme","hostname","port","path"))("gopher",url[len("gopher://"):],None,"/")
+    else:
+        u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
     if u.path and u.path[0] == '/' and len(u.path) > 1:
@@ -977,7 +981,7 @@ Returns a binary file with the reply."""
     elif type(port) == type(''):
         port = int(port)
     # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
-    if socket.has_ipv6 and ipv6:
+    if socket.has_ipv6 and (ipv6 or "::" in host):
         family_mask = 0
     else:
         family_mask = socket.AF_INET
