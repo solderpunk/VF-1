@@ -197,6 +197,7 @@ class GopherClient(cmd.Cmd):
         self.options = {
             "color_menus" : False,
             "encoding" : "iso-8859-1",
+            "ipv6" : False,
         }
 
     def set_prompt(self, tls):
@@ -232,9 +233,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls)
+                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
             else:
-                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls)
+                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
 
         # Catch network exceptions, which may be recoverable if a redundant
         # mirror is specified
@@ -964,7 +965,7 @@ DEF_PORT     = 70
 # Names for characters and strings
 CRLF = '\r\n'
 
-def send_selector(selector, host, port = 0, tls=False):
+def send_selector(selector, host, port=None, tls=False, ipv6=False):
     """Send a selector to a given host and port.
 Returns a binary file with the reply."""
     if not port:
@@ -975,21 +976,45 @@ Returns a binary file with the reply."""
         port = DEF_PORT
     elif type(port) == type(''):
         port = int(port)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if tls:
-        context = ssl.create_default_context()
-        # context.check_hostname = False
-        # context.verify_mode = ssl.CERT_NONE
-        s = context.wrap_socket(s, server_hostname = host)
+    # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
+    if socket.has_ipv6 and ipv6:
+        family_mask = 0
     else:
-        s.settimeout(10.0)
-    s.connect((host, port))
+        family_mask = socket.AF_INET
+    addresses = socket.getaddrinfo(host, port, family=family_mask,
+            type=socket.SOCK_STREAM)
+    # Sort addresses so IPv6 ones come first
+    addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
+    # Verify that this sort works
+    if any(add[0] == socket.AF_INET6 for add in addresses):
+        assert addresses[0][0] == socket.AF_INET6
+    # Connect to remote host by any address possible
+    for address in addresses:
+        s = socket.socket(address[0], address[1])
+        if tls:
+            context = ssl.create_default_context()
+            # context.check_hostname = False
+            # context.verify_mode = ssl.CERT_NONE
+            s = context.wrap_socket(s, server_hostname = host)
+        else:
+            s.settimeout(10.0)
+        try:
+            s.connect(address[4])
+            break
+        except OSError as e:
+            pass    # This just ensures e is defined for below
+    else:
+        # If we couldn't connect to *any* of the addresses, just
+        # bubble up the exception from the last attempt and deny
+        # knowledge of earlier failures.
+        raise e
+    # Send request and wrap response in a file descriptor
     s.sendall((selector + CRLF).encode("UTF-8"))
     return s.makefile(mode = "rb")
 
-def send_query(selector, query, host, port=0, tls=False):
+def send_query(selector, query, host, port=0, tls=False, ipv6=False):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port, tls)
+    return send_selector(selector + '\t' + query, host, port, tls, ipv6)
 
 # Config file finder
 def get_rcfile():
