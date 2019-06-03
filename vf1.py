@@ -506,7 +506,7 @@ enable automatic encoding detection.""")
         self.hist_index = len(self.history) - 1
 
     def _get_active_tmpfile(self):
-        return self.idx_filename if self.gi.itemtype == "1" else self.tmp_filename
+        return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
 
     # Cmd implementation follows
     def default(self, line):
