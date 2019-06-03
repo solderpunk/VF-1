@@ -989,6 +989,7 @@ Returns a binary file with the reply."""
     if any(add[0] == socket.AF_INET6 for add in addresses):
         assert addresses[0][0] == socket.AF_INET6
     # Connect to remote host by any address possible
+    err = None
     for address in addresses:
         s = socket.socket(address[0], address[1])
         if tls:
@@ -1002,12 +1003,12 @@ Returns a binary file with the reply."""
             s.connect(address[4])
             break
         except OSError as e:
-            pass    # This just ensures e is defined for below
+            err = e
     else:
         # If we couldn't connect to *any* of the addresses, just
         # bubble up the exception from the last attempt and deny
         # knowledge of earlier failures.
-        raise e
+        raise err
     # Send request and wrap response in a file descriptor
     s.sendall((selector + CRLF).encode("UTF-8"))
     return s.makefile(mode = "rb")
