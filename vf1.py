@@ -22,7 +22,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-import traceback
 import urllib.parse
 import ssl
 
