@@ -73,10 +73,7 @@ Well, let's start off by heading to SDF to check out some nice phlogs!  Use the
 VF-1> go sdf.org/
 ```
 
-(don't leave off the trailing slash - this won't be necessary in future
-releases, but right now it is required for technical reasons I won't get into)
-
-(if you are very lazy, you can type "g sdf.org/" instead, i.e. you can
+(if you are lazy, you can type "g sdf.org/" instead, i.e. you can
 abbreviate "go" to "g")
 
 You should see a listing of the SDF Gopherspace.  The different menu items are
@@ -94,25 +91,27 @@ up in your terminal like always, but VF-1 gives you other ways to deal with
 this.  After you have visited a gopher menu (as opposed to a document), if you
 just press Enter (i.e. execute an empty line), VF-1 will print the first 10
 items in the menu by themselves (any ASCII art etc. in the original listing is
-removed in this mode).  Each time you press enter you will see the next ten
-items in the listing.  Page through a few times to get a feel for it.
+removed in this mode).  Each time you press Enter you will see the next ten
+items in the listing.  Page through a few times to get a feel for it.  There
+are other ways to deal with gopher menus which don't fit on one screen, but
+nothing is faster than just tapping Enter, so it's a good habit to pick up.
 
-If you just want to see which phlogs have been updated lately, that's probably
-enough for you.  But suppose you are really curious about one phlog in
-particular.  Say you want to know what Tomasino has been up to.  You could
-search for his phlog specifically:
+If you just want to see which phlogs have been updated lately, seeing the first
+10 or 20 menu items is probably enough for you.  But suppose you are really
+curious about one phlog in particular.  Say you want to know what Tomasino has
+been up to.  You could search for his phlog specifically:
 
 ```
 VF-1> search tom
 ```
 
-(if you are very lazy, you can use "/" instead of "search", i.e. "/ tom")
+(if you are lazy, you can use "/" instead of "search", i.e. "/ tom")
 
 This will show you the phlogs with "tom" in them (it's a simple case-insensitive
 search).  Tomasino will probably be [1] or [2] (depends whether tomatobodhi has
 updated more recently :).  So go ahead and type "1" and hit enter again to enter
 Tomasino's gopherhole.  Then you can type "2" and enter to go to his phlog, and
-then "1" and enter to read his most recent entry about Kindles.
+then "1" and enter to read his most recent entry.
 
 Suppose now you want to go back to the main SDF phlog listing.  Let's check out
 your history:
@@ -121,8 +120,8 @@ your history:
 VF-1> history
 ```
 
-(if you are very lazy, you can abbreviate "history" to "hist", and in fact if
-you are fiendishly lazy you can just use "h")
+(if you are lazy, you can abbreviate "history" to "hist", and in fact if
+you are very lazy you can just use "h")
 
 You should this time see a menu of the few places you've been so far.  The
 phlogosphere list will probably be [2], so type "2" and enter to go back there.
@@ -169,8 +168,7 @@ command of this kind available.  Get back to the main SDF phlog listing (either
 by running "back" a few times or using "hist" and a number to jump straight to
 it) and go to my phlog.  Unlike gunnarfrost, I appear to be physiologically
 incapable of writing phlog posts which are less than a few whole screens long.
-Go to one of these posts (say my most recent "assorted replies and
-acknowledgements"), and watch the lines fly by.  Now try:
+Go to one of these posts, and watch the lines fly by.  Now try:
 
 ```
 VF-1> less
@@ -178,12 +176,15 @@ VF-1> less
 
 This will pipe my giant entry through "less", so you can move back and forth and
 read it.  Just press "q" when you're done like usual to get your VF-1 prompt
-back.
+back.  You can also use less to navigate long menus, and unlike hitting Enter
+to page through items 10 at a time, less will preserve non-entry lines, so you
+can see ASCII art etc.
 
-I have quite a few references at the end of that entry.  You might be tempted to
-pick up your mouse, highlight those URLs, and use the "go" command to visit
-them.  Put that rodent down!  The mouse, that is, not the gopher.  Instead, try
-this command:
+I usually have at least one reference at the end of that entry, formatted as a
+URL after an index number in square brackets.  You might be tempted to pick up
+your mouse, highlight the URL, type "go " and then paste the URL to visit it.
+Put that rodent down!  The mouse, that is, not the gopher.  Instead, try this
+command:
 
 ```
 VF-1> links
@@ -209,6 +210,15 @@ If you want to save the document, just do:
 VF-1> save ~/some/random/path/somefilename.txt
 ```
 
+If you're in a hurry, you can just do:
+
+```
+VF-1> save
+```
+
+and VF-1 will try to derive a sensible filename from the current document's
+URL.  There's no guarantee it will be pretty, or easy to remember, though.
+
 Everything so far has been text-based.  Gopher items with itemtype 0 (text) are
 fed to the "cat" command by default, or to "less" or "fold" if you request it.
 But VF-1 can handle other itemtypes too.  Image files with an item type of "g"
@@ -216,11 +226,9 @@ or "I" will be opened using the "feh" image viewer (if installed).  HTML
 content with an item type of "h" will be fed to "lynx --dump", and audio files
 with an item type of "a" will be fed to "mpg123" (e.g. you can listen to jynx's
 doom metal songs in this way).  Obviously if you do not have one of these
-programs installed, it will not work.  In future I may provide some nice way to
-customise which 3rd party programs are used for different item types.  For now,
-if you want to use different programs, you will have to edit the code.  It's not
-hard, just look for the _HANDLERS dictionary near the top of vf1.py and change
-accordingly.
+programs installed, it will not work.  Fear not, there's a way for you to
+customise these handler programs - see the "Handlers" section below for all
+the details.
 
 You probably need some bookmarks, right? Here's how to add the current
 URL to your bookmarks. You can provide your own name, if you want.
@@ -229,7 +237,7 @@ URL to your bookmarks. You can provide your own name, if you want.
 VF-1> add
 ```
 
-(or, if you are as lazy as usual, just "a")
+(or, if you are lazy as usual, just "a")
 
 If you want to reorganize your bookmarks, just open
 `~/.vf1-bookmarks.txt` using a text editor and do it.
@@ -240,7 +248,10 @@ If you want to look at your bookmarks:
 VF-1> bookmarks
 ```
 
-(or, if you feel comfortably lazy, just "bm")
+(if lazy, just "bm")
+
+Now let's look at VF-1's two tools for quick and easy navigation through
+gopherspace - tours and marks.
 
 Sometimes you're looking at a menu and it's very long but you know you
 want to look at few items, one after another. Assume you're looking at
@@ -277,7 +288,10 @@ VF-1> go x
 
 (And yes, "m" for the lazy.)
 
-To make a few implicit concepts explicit:
+## Concepts
+
+Let's make a few concpets which were implicit in the informal tutorial
+above implicit:
 
 * VF-1 always has in it's mind exactly one "index", i.e. a list of places in
   Gopherspace with numbers attached to them.  By typing "1" and enter, "2" and
