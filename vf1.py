@@ -229,7 +229,8 @@ class GopherClient(cmd.Cmd):
             return
 
         # From here on in, it's gopher only
-        # Hit the network
+        # Do everything which touches the network in one block,
+        # so we only need to catch exceptions once
         try:
             # Is this a local file?
             if not gi.host:
@@ -241,6 +242,18 @@ class GopherClient(cmd.Cmd):
                 f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
             else:
                 f = send_selector(gi.path, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
+            # Attempt to decode something that is supposed to be text
+            # (which involves reading the entire file over the network
+            # first)
+            if gi.itemtype in ("0", "1", "7", "h"):
+                try:
+                    f = self._decode_text(f)
+                except UnicodeError:
+                    print("""ERROR: Unknown text encoding!
+If you know the correct encoding, use e.g. 'set encoding koi8-r' and
+try again.  Otherwise, install the 'chardet' library for Python 3 to
+enable automatic encoding detection.""")
+                    return
 
         # Catch network exceptions, which may be recoverable if a redundant
         # mirror is specified
@@ -254,15 +267,11 @@ class GopherClient(cmd.Cmd):
                 print("ERROR: Connection refused!")
             elif isinstance(network_error, ConnectionResetError):
                 print("ERROR: Connection reset!")
-            elif isinstance(network_error, TimeoutError):
+            elif isinstance(network_error, (TimeoutError, socket.timeout)):
                 print("ERROR: Connection timed out!")
                 if self.tls:
                     print("Disable battloid mode using 'tls' to enter civilian territory.")
                 else:
-                    print("Switch to battloid mode using 'tls' to enable encryption.")
-            elif isinstance(network_error, socket.timeout):
-                print("ERROR: This is taking too long.")
-                if not self.tls:
                     print("Switch to battloid mode using 'tls' to enable encryption.")
             # Try to fall back on a redundant mirror
             new_gi = self._get_mirror_gi(gi)
@@ -283,21 +292,6 @@ class GopherClient(cmd.Cmd):
                 print("In battloid mode, encryption is mandatory.")
                 print("Use 'tls' to toggle battloid mode.")
             return
-
-        # Attempt to decode something that is supposed to be text
-        if gi.itemtype in ("0", "1", "7", "h"):
-            try:
-                f = self._decode_text(f)
-            except socket.timeout:
-                print("ERROR: Timed out... Scrambling frequencies...")
-                print("Stealth status compromised; enter battloid mode using 'tls'.")
-                return
-            except UnicodeError:
-                print("""ERROR: Unknown text encoding!
-If you know the correct encoding, use e.g. 'set encoding koi8-r' and
-try again.  Otherwise, install the 'chardet' library for Python 3 to
-enable automatic encoding detection.""")
-                return
 
         # Save the result in a temporary file
         ## Delete old file
