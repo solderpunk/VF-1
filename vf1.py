@@ -739,12 +739,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         """List contents of current index.
 Use 'ls -l' to see URLs."""
         self.lookup = self.index
-        # If we add any more options to ls, we'll have to use argparse
-        # again here, but I hope the options don't explode, and for just
-        # two, the below seems good enough.
-        options = line.strip().split()
-        show_urls = any((x in options for x in ("-l", "-lr")))
-        self.show_lookup(url = show_urls)
+        self.show_lookup(url = "-l" in line)
         self.page_index = 0
 
     def do_history(self, *args):
