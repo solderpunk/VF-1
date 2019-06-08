@@ -971,10 +971,7 @@ Returns a binary file with the reply."""
         i = host.find(':')
         if i >= 0:
             host, port = host[:i], int(host[i+1:])
-    if not port:
-        port = DEF_PORT
-    elif type(port) == type(''):
-        port = int(port)
+    port = int(port) or DEF_PORT
     # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
     if socket.has_ipv6 and (ipv6 or "::" in host):
         family_mask = 0
