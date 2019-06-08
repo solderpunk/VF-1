@@ -836,7 +836,7 @@ Use 'ls -l' to see URLs."""
             return
 
         # Next, fetch the item to save, if it's not the current one.
-        if index != None:
+        if index:
             last_gi = self.gi
             try:
                 gi = self.lookup[index-1]
@@ -845,15 +845,21 @@ Use 'ls -l' to see URLs."""
                 print ("Index too high!")
                 self.gi = last_gi
                 return
+        else:
+            gi = self.gi
 
         # Derive filename from current GI's path, if one hasn't been set
         if not filename:
-            if self.gi.itemtype == '1':
-                path = self.gi.path
+            if gi.itemtype == '1':
+                path = gi.path
                 if path in ("", "/"):
                     # Attempt to derive a nice filename from the gopher
-                    # item name
-                    filename = gi.name.lower().replace(" ","_") + ".txt"
+                    # item name, falling back to the hostname if there
+                    # is no item name
+                    if gi.name == "<direct URL>":
+                        filename = gi.host.lower() + ".txt"
+                    else:
+                        filename = gi.name.lower().replace(" ","_") + ".txt"
                 else:
                     # Derive a filename from the last component of the
                     # path
@@ -861,12 +867,11 @@ Use 'ls -l' to see URLs."""
                         path = path[0:-1]
                     filename = os.path.split(path)[1]
             else:
-                filename = os.path.basename(self.gi.path)
-            print("Set filename to: " + filename)
+                filename = os.path.basename(gi.path)
 
         # Check for filename collisions and actually do the save if safe
         if os.path.exists(filename):
-            print("File already exists!")
+            print("File %s already exists!" % filename)
         else:
             # Don't use _get_active_tmpfile() here, because we want to save the
             # "source code" of menus, not the rendered view - this way VF-1
@@ -876,7 +881,7 @@ Use 'ls -l' to see URLs."""
 
         # Restore gi if necessary
         if index != None:
-            self._go_to_gi(last_gi)
+            self._go_to_gi(last_gi, handle=False)
 
     @needs_gi
     def do_url(self, *args):
