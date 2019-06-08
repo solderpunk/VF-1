@@ -954,9 +954,10 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
 
     do_exit = do_quit
 
-# Code below is the core of he gopherlib.py module from Python 2.4, with
-# minimal changes made for Python 3 compatibility and to handle
-# convenient download of plain text (including Unicode) or binary files.
+# Code below started life as the core of the old gopherlib.py module
+# from Python 2.4, with minimal changes made for Python 3 compatibility
+# and to handle convenient download of plain text (including Unicode)
+# or binary files.  It's come a long way since then, though...
 
 # Default selector, host and port
 DEF_PORT     = 70
