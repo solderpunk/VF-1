@@ -202,6 +202,7 @@ class GopherClient(cmd.Cmd):
             "color_menus" : False,
             "encoding" : "iso-8859-1",
             "ipv6" : False,
+            "timeout" : "10",
         }
 
     def set_prompt(self, tls):
@@ -238,9 +239,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
+                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls, self.options["ipv6"], self.options["timeout"])
             else:
-                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls, self.options["ipv6"])
+                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls, self.options["ipv6"], self.options["timeout"])
             # Attempt to decode something that is supposed to be text
             # (which involves reading the entire file over the network
             # first)
@@ -563,6 +564,11 @@ enable automatic encoding detection.""")
                 value = False
             elif value.lower() == "true":
                 value = True
+            else:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
             self.options[option] = value
 
     def do_handler(self, line):
@@ -961,7 +967,8 @@ DEF_PORT     = 70
 # Names for characters and strings
 CRLF = '\r\n'
 
-def send_selector(selector, host, port=None, tls=False, ipv6=False):
+def send_selector(selector, host, port=None, tls=False, ipv6=False,
+        timeout=10):
     """Send a selector to a given host and port.
 Returns a binary file with the reply."""
     if not port:
@@ -985,13 +992,12 @@ Returns a binary file with the reply."""
     err = None
     for address in addresses:
         s = socket.socket(address[0], address[1])
+        s.settimeout(timeout)
         if tls:
             context = ssl.create_default_context()
             # context.check_hostname = False
             # context.verify_mode = ssl.CERT_NONE
             s = context.wrap_socket(s, server_hostname = host)
-        else:
-            s.settimeout(10.0)
         try:
             s.connect(address[4])
             break
@@ -1006,9 +1012,9 @@ Returns a binary file with the reply."""
     s.sendall((selector + CRLF).encode("UTF-8"))
     return s.makefile(mode = "rb")
 
-def send_query(selector, query, host, port=0, tls=False, ipv6=False):
+def send_query(selector, query, host, port=0, tls=False, ipv6=False, timeout=10):
     """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port, tls, ipv6)
+    return send_selector(selector + '\t' + query, host, port, tls, ipv6, timeout)
 
 # Config file finder
 def get_rcfile():
