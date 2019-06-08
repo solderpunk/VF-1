@@ -746,6 +746,7 @@ Use 'ls -l' to see URLs."""
         """Display history."""
         self.lookup = self.history
         self.show_lookup(url=True)
+        self.page_index = 0
 
     def do_search(self, searchterm):
         """Search index (case insensitive)."""
@@ -754,6 +755,7 @@ Use 'ls -l' to see URLs."""
         if results:
             self.lookup = results
             self.show_lookup()
+            self.page_index = 0
         else:
             print("No results found.")
 
