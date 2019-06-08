@@ -255,7 +255,7 @@ try again.  Otherwise, install the 'chardet' library for Python 3 to
 enable automatic encoding detection.""")
                     return
 
-        # Catch network exceptions, which may be recoverable if a redundant
+        # Catch network errors which may be recoverable if a redundant
         # mirror is specified
         except (socket.gaierror, ConnectionRefusedError,
                 ConnectionResetError, TimeoutError, socket.timeout,
@@ -268,11 +268,10 @@ enable automatic encoding detection.""")
             elif isinstance(network_error, ConnectionResetError):
                 print("ERROR: Connection reset!")
             elif isinstance(network_error, (TimeoutError, socket.timeout)):
-                print("ERROR: Connection timed out!")
-                if self.tls:
-                    print("Disable battloid mode using 'tls' to enter civilian territory.")
-                else:
-                    print("Switch to battloid mode using 'tls' to enable encryption.")
+                print("""ERROR: Connection timed out!
+Slow internet connection?  Use 'set timeout' to be more patient.""")
+                if not self.tls:
+                    print("Encrypted gopher server?  Use 'tls' to enable encryption.")
             # Try to fall back on a redundant mirror
             new_gi = self._get_mirror_gi(gi)
             if new_gi:
@@ -280,17 +279,12 @@ enable automatic encoding detection.""")
                 self._go_to_gi(new_gi)
             return
 
-        # Catch non-network exceptions
-        except OSError:
-            print("ERROR: Operating system error... Recovery initiated...")
-            print("Consider toggling battloid mode using 'tls' to adapt to the new situation.")
-            return
-        except ssl.SSLError as err:
-            print("ERROR: " + err.reason)
-            if err.reason == "UNKNOWN_PROTOCOL":
+        # Catch non-recoverable errors
+        except (OSError, ssl.SSLError) as err:
+            print("ERROR: " + str(err))
+            if (isinstance(err, (ssl.SSLError)) and err.reason == "UNKNOWN_PROTOCOL") or (isinstance(err, OSError) and err.reason == "WRONG_VERSION_NUMBER"):
                 print(gopheritem_to_url(gi) + " is probably not encrypted.")
-                print("In battloid mode, encryption is mandatory.")
-                print("Use 'tls' to toggle battloid mode.")
+                print("Use 'tls' to disable encryption.")
             return
 
         # Save the result in a temporary file
