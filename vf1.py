@@ -202,7 +202,7 @@ class GopherClient(cmd.Cmd):
             "color_menus" : False,
             "encoding" : "iso-8859-1",
             "ipv6" : False,
-            "timeout" : "10",
+            "timeout" : 10,
         }
 
     def set_prompt(self, tls):
