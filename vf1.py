@@ -24,6 +24,7 @@ import sys
 import tempfile
 import urllib.parse
 import ssl
+import time
 
 # Use chardet if it's there, but don't depend on it
 try:
@@ -36,6 +37,7 @@ except ImportError:
 _ABBREVS = {
     "a":    "add",
     "b":    "back",
+    "bb":   "blackbox",
     "bm":   "bookmarks",
     "book": "bookmarks",
     "f":    "fold",
@@ -207,6 +209,22 @@ class GopherClient(cmd.Cmd):
             "timeout" : 10,
         }
 
+        self.log = {
+            "start_time": time.time(),
+            "requests": 0,
+            "tls_requests": 0,
+            "ipv4_requests": 0,
+            "ipv6_requests": 0,
+            "bytes_recvd": 0,
+            "ipv4_bytes_recvd": 0,
+            "ipv6_bytes_recvd": 0,
+            "dns_failures": 0,
+            "refused_connections": 0,
+            "reset_connections": 0,
+            "timeouts": 0,
+        }
+        self.visited_hosts = set()
+
     # This method below started life as the core of the old gopherlib.py
     # module from Python 2.4, with minimal changes made for Python 3
     # compatibility and to handle convenient download of plain text (including
@@ -283,6 +301,7 @@ class GopherClient(cmd.Cmd):
         try:
             # Is this a local file?
             if not gi.host:
+                address = None
                 f = open(gi.path, "rb")
             # Is this a search point?
             elif gi.itemtype == "7":
@@ -311,12 +330,16 @@ enable automatic encoding detection.""")
                 ) as network_error:
             # Print an error message
             if isinstance(network_error, socket.gaierror):
+                self.log["dns_failures"] += 1
                 print("ERROR: DNS error!")
             elif isinstance(network_error, ConnectionRefusedError):
+                self.log["refused_connections"] += 1
                 print("ERROR: Connection refused!")
             elif isinstance(network_error, ConnectionResetError):
+                self.log["reset_connections"] += 1
                 print("ERROR: Connection reset!")
             elif isinstance(network_error, (TimeoutError, socket.timeout)):
+                self.log["timeouts"] += 1
                 print("""ERROR: Connection timed out!
 Slow internet connection?  Use 'set timeout' to be more patient.""")
                 if not self.tls:
@@ -369,7 +392,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
 
         # Update state
         self.gi = gi
-        self._log_visit(address, size)
+        self._log_visit(gi, address, size)
         if update_hist:
             self._update_history(gi)
 
@@ -543,8 +566,20 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self.history.append(gi)
         self.hist_index = len(self.history) - 1
 
-    def _log_visit(self, address, size):
-        pass
+    def _log_visit(self, gi, address, size):
+        if not address:
+            return
+        self.log["requests"] += 1
+        self.log["bytes_recvd"] += size
+        self.visited_hosts.add(address)
+        if self.tls:
+            self.log["tls_requests"] += 1
+        if address[0] == socket.AF_INET:
+            self.log["ipv4_requests"] += 1
+            self.log["ipv4_bytes_recvd"] += size
+        elif address[0] == socket.AF_INET6:
+            self.log["ipv6_requests"] += 1
+            self.log["ipv6_bytes_recvd"] += size
 
     def _get_active_tmpfile(self):
         return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
@@ -994,6 +1029,26 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             print("? is an alias for 'help'")
         else:
             cmd.Cmd.do_help(self, arg)
+
+    ### Flight recorders
+    def do_blackbox(self, *args):
+        """Display contents of flight recorder, showing statistics for the
+current gopher browsing session."""
+        print("==============================")
+        print("DUMPING FLIGHT RECORDER MEMORY")
+        print("==============================")
+        now = time.time()
+        delta = now - self.log["start_time"]
+        hours, remainder = divmod(delta, 36060)
+        minutes, seconds = divmod(remainder, 60)
+        print("Flight duration: %02d:%02d:%02d" % (hours, minutes, seconds))
+        for key, value in self.log.items():
+            if key == "start_time":
+                continue
+            print("%s: %s" % (key, str(value)))
+        print("Unique hosts visited: %d" % len(self.visited_hosts))
+        print("Unique IPv4 hosts visited: %d" % len([host for host in self.visited_hosts if host[0] == socket.AF_INET]))
+        print("Unique IPv6 hosts visited: %d" % len([host for host in self.visited_hosts if host[0] == socket.AF_INET6]))
 
     ### The end!
     def do_quit(self, *args):
