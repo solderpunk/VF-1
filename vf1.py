@@ -720,7 +720,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         pathbits = os.path.split(self.gi.path)
         new_path = os.path.join(*pathbits[0:-1])
         new_gi = GopherItem(gi.host, gi.port, new_path, "1", gi.name, gi.tls)
-        self._go_to_gi(new_gi, update_hist=False)
+        self._go_to_gi(new_gi)
 
     def do_back(self, *args):
         """Go back to the previous gopher item."""
