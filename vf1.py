@@ -224,6 +224,9 @@ class GopherClient(cmd.Cmd):
             "timeouts": 0,
         }
         self.visited_hosts = set()
+        self.itemtype_counts = {}
+        for itemtype in "0 1 7 8 9 h g s I T".split():
+            self.itemtype_counts[itemtype] = 0
 
     def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
         """This method might be considered "the heart of VF-1".
@@ -561,6 +564,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self.hist_index = len(self.history) - 1
 
     def _log_visit(self, gi, address, size):
+        self.itemtype_counts[gi.itemtype] += 1
         if not address:
             return
         self.log["requests"] += 1
@@ -1043,22 +1047,22 @@ current gopher browsing session."""
         ipv6_hosts = len([host for host in self.visited_hosts if host[0] == socket.AF_INET6])
         # Assemble lines
         lines.append(("Flight duration", "%02d:%02d:%02d" % (hours, minutes, seconds)))
-        lines.append(("",""))
         lines.append(("Requests sent:", self.log["requests"]))
         lines.append(("   IPv4 requests:", self.log["ipv4_requests"]))
         lines.append(("   IPv6 requests:", self.log["ipv6_requests"]))
         lines.append(("   TLS-secured requests:", self.log["tls_requests"]))
+        for itemtype in "0 1 7 8 9 h g s I T".split():
+            lines.append(("   Itemtype %s:" % itemtype, self.itemtype_counts[itemtype]))
         lines.append(("Bytes received:", self.log["bytes_recvd"]))
         lines.append(("   IPv4 bytes:", self.log["ipv4_bytes_recvd"]))
         lines.append(("   IPv6 bytes:", self.log["ipv6_bytes_recvd"]))
         lines.append(("Unique hosts visited:", len(self.visited_hosts)))
         lines.append(("   IPv4 hosts:", ipv4_hosts))
         lines.append(("   IPv6 hosts:", ipv6_hosts))
-        lines.append(("",""))
+        lines.append(("DNS failures:", self.log["dns_failures"]))
         lines.append(("Timeouts:", self.log["timeouts"]))
         lines.append(("Refused connections:", self.log["refused_connections"]))
         lines.append(("Reset connections:", self.log["reset_connections"]))
-        lines.append(("DNS failures:", self.log["dns_failures"]))
         # Print
         for key, value in lines:
             print(key.ljust(24) + str(value).rjust(8))
