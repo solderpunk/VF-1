@@ -225,72 +225,22 @@ class GopherClient(cmd.Cmd):
         }
         self.visited_hosts = set()
 
-    # This method below started life as the core of the old gopherlib.py
-    # module from Python 2.4, with minimal changes made for Python 3
-    # compatibility and to handle convenient download of plain text (including
-    # Unicode) or binary files.  It's come a long way since then, though...
-    def _send_request(self, gi, query=None):
-        """Send a selector to a given host and port.
-        Returns the resolved address and binary file with the reply."""
-        # Add query to selector
-        if query:
-            gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
-                    gi.itemtype, gi.name, gi.tls)
-        # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
-        if socket.has_ipv6 and (self.options["ipv6"] or "::" in gi.host):
-            family_mask = 0
-        else:
-            family_mask = socket.AF_INET
-        addresses = socket.getaddrinfo(gi.host, gi.port, family=family_mask,
-                type=socket.SOCK_STREAM)
-        # Sort addresses so IPv6 ones come first
-        addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
-        # Verify that this sort works
-        if any(add[0] == socket.AF_INET6 for add in addresses):
-            assert addresses[0][0] == socket.AF_INET6
-        # Connect to remote host by any address possible
-        err = None
-        for address in addresses:
-            s = socket.socket(address[0], address[1])
-            s.settimeout(self.options["timeout"])
-            if self.tls:
-                context = ssl.create_default_context()
-                # context.check_hostname = False
-                # context.verify_mode = ssl.CERT_NONE
-                s = context.wrap_socket(s, server_hostname = host)
-            try:
-                s.connect(address[4])
-                break
-            except OSError as e:
-                err = e
-        else:
-            # If we couldn't connect to *any* of the addresses, just
-            # bubble up the exception from the last attempt and deny
-            # knowledge of earlier failures.
-            raise err
-        # Send request and wrap response in a file descriptor
-        s.sendall((gi.path + CRLF).encode("UTF-8"))
-        return address, s.makefile(mode = "rb")
-
-    def _set_prompt(self, tls):
-        self.tls = tls
-        if self.tls:
-            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
-        else:
-            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
-
     def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
-        # Telnet is a completely separate thing
-        if gi.itemtype in ("8", "T"):
-            if gi.path:
+        """This method might be considered "the heart of VF-1".
+        Everything involved in fetching a gopher resource happens here:
+        sending the request over the network, parsing the response if
+        its a menu, storing the response in a temporary file, choosing
+        and calling a handler program, and updating the history."""
+        # Handle non-gopher protocols first
+        if gi.itemtype in ("8", "T", "S"):
+            # SSH (non-standard, but nice)
+            if gi.itemtype == "S":
+                subprocess.call(shlex.split("ssh %s@%s -p %s" % (gi.path, gi.host, gi.port)))
+            # Telnet
+            elif gi.path:
                 subprocess.call(shlex.split("telnet -l %s %s %s" % (gi.path, gi.host, gi.port)))
             else:
                 subprocess.call(shlex.split("telnet %s %s" % (gi.host, gi.port)))
-            if update_hist:
-                self._update_history(gi)
-            return
-        elif gi.itemtype == "S":
-            subprocess.call(shlex.split("ssh %s@%s -p %s" % (gi.path, gi.host, gi.port)))
             if update_hist:
                 self._update_history(gi)
             return
@@ -301,8 +251,7 @@ class GopherClient(cmd.Cmd):
         try:
             # Is this a local file?
             if not gi.host:
-                address = None
-                f = open(gi.path, "rb")
+                address, f = None, open(gi.path, "rb")
             # Is this a search point?
             elif gi.itemtype == "7":
                 if not query_str:
@@ -396,6 +345,54 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         if update_hist:
             self._update_history(gi)
 
+    # This method below started life as the core of the old gopherlib.py
+    # module from Python 2.4, with minimal changes made for Python 3
+    # compatibility and to handle convenient download of plain text (including
+    # Unicode) or binary files.  It's come a long way since then, though.
+    # Everything network related happens in this one method!
+    def _send_request(self, gi, query=None):
+        """Send a selector to a given host and port.
+        Returns the resolved address and binary file with the reply."""
+        # Add query to selector
+        if query:
+            gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
+                    gi.itemtype, gi.name, gi.tls)
+        # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
+        if socket.has_ipv6 and (self.options["ipv6"] or "::" in gi.host):
+            family_mask = 0
+        else:
+            family_mask = socket.AF_INET
+        addresses = socket.getaddrinfo(gi.host, gi.port, family=family_mask,
+                type=socket.SOCK_STREAM)
+        # Sort addresses so IPv6 ones come first
+        addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
+        # Verify that this sort works
+        if any(add[0] == socket.AF_INET6 for add in addresses):
+            assert addresses[0][0] == socket.AF_INET6
+        # Connect to remote host by any address possible
+        err = None
+        for address in addresses:
+            s = socket.socket(address[0], address[1])
+            s.settimeout(self.options["timeout"])
+            if self.tls:
+                context = ssl.create_default_context()
+                # context.check_hostname = False
+                # context.verify_mode = ssl.CERT_NONE
+                s = context.wrap_socket(s, server_hostname = host)
+            try:
+                s.connect(address[4])
+                break
+            except OSError as e:
+                err = e
+        else:
+            # If we couldn't connect to *any* of the addresses, just
+            # bubble up the exception from the last attempt and deny
+            # knowledge of earlier failures.
+            raise err
+        # Send request and wrap response in a file descriptor
+        s.sendall((gi.path + CRLF).encode("UTF-8"))
+        return address, s.makefile(mode = "rb")
+
     def _get_handler_cmd(self, gi):
         # First, get mimetype, either from itemtype or filename
         if gi.itemtype in _ITEMTYPE_TO_MIME:
@@ -479,7 +476,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             os.unlink(self.idx_filename)
         tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
         self.idx_filename = tmpf.name
-        self.page_index = 0
         for line in f:
             if line.startswith("3"):
                 print("Error message from server:")
@@ -505,10 +501,28 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         tmpf.close()
 
         self.lookup = self.index
+        self.page_index = 0
         self.index_index = -1
 
         cmd_str = _MIME_HANDLERS["text/plain"]
         subprocess.call(shlex.split(cmd_str % self.idx_filename))
+
+    def _format_gopheritem(self, index, gi, name=True, url=False):
+        line = "[%d] " % index
+        # Add item name, with itemtype indicator for non-text items
+        if name:
+            line += gi.name
+            if gi.itemtype in _ITEMTYPE_TITLES:
+                line += _ITEMTYPE_TITLES[gi.itemtype]
+            elif gi.itemtype == "1":
+                line += "/"
+        # Add URL if requested
+        if url:
+            line += " (%s)" % gopheritem_to_url(gi)
+        # Colourise
+        if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
+            line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
+        return line
 
     def _register_redundant_server(self, gi):
         # This mirrors the last non-mirror item
@@ -533,23 +547,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 mirror_path + "/" + gi.path[len(path_prefix):],
                 gi.itemtype, gi.name, gi.tls)
         return new_gi
-
-    def _format_gopheritem(self, index, gi, name=True, url=False):
-        line = "[%d] " % index
-        # Add item name, with itemtype indicator for non-text items
-        if name:
-            line += gi.name
-            if gi.itemtype in _ITEMTYPE_TITLES:
-                line += _ITEMTYPE_TITLES[gi.itemtype]
-            elif gi.itemtype == "1":
-                line += "/"
-        # Add URL if requested
-        if url:
-            line += " (%s)" % gopheritem_to_url(gi)
-        # Colourise
-        if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
-            line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
-        return line
 
     def _show_lookup(self, offset=0, end=None, name=True, url=False):
         for n, gi in enumerate(self.lookup[offset:end]):
@@ -577,6 +574,13 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         elif address[0] == socket.AF_INET6:
             self.log["ipv6_requests"] += 1
             self.log["ipv6_bytes_recvd"] += size
+
+    def _set_prompt(self, tls):
+        self.tls = tls
+        if self.tls:
+            self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
+        else:
+            self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
 
     def _get_active_tmpfile(self):
         return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
@@ -1024,7 +1028,7 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         else:
             cmd.Cmd.do_help(self, arg)
 
-    ### Flight recorders
+    ### Flight recorder
     def do_blackbox(self, *args):
         """Display contents of flight recorder, showing statistics for the
 current gopher browsing session."""
