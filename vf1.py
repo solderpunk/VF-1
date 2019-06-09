@@ -112,6 +112,8 @@ _ITEMTYPE_COLORS = {
     "T":        _ANSI_COLORS["purple"],   # Telnet
 }
 
+CRLF = '\r\n'
+
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
@@ -205,6 +207,58 @@ class GopherClient(cmd.Cmd):
             "timeout" : 10,
         }
 
+    # The two methods below started life as the core of the old gopherlib.py
+    # module from Python 2.4, with minimal changes made for Python 3
+    # compatibility and to handle convenient download of plain text (including
+    # Unicode) or binary files.  It's come a long way since then, though...
+    def send_selector(self, selector, host, port=None):
+        """Send a selector to a given host and port.
+        Returns a binary file with the reply."""
+        if not port:
+            i = host.find(':')
+            if i >= 0:
+                host, port = host[:i], int(host[i+1:])
+        port = int(port) or 70
+        # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
+        if socket.has_ipv6 and (self.options["ipv6"] or "::" in host):
+            family_mask = 0
+        else:
+            family_mask = socket.AF_INET
+        addresses = socket.getaddrinfo(host, port, family=family_mask,
+                type=socket.SOCK_STREAM)
+        # Sort addresses so IPv6 ones come first
+        addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
+        # Verify that this sort works
+        if any(add[0] == socket.AF_INET6 for add in addresses):
+            assert addresses[0][0] == socket.AF_INET6
+        # Connect to remote host by any address possible
+        err = None
+        for address in addresses:
+            s = socket.socket(address[0], address[1])
+            s.settimeout(self.options["timeout"])
+            if self.tls:
+                context = ssl.create_default_context()
+                # context.check_hostname = False
+                # context.verify_mode = ssl.CERT_NONE
+                s = context.wrap_socket(s, server_hostname = host)
+            try:
+                s.connect(address[4])
+                break
+            except OSError as e:
+                err = e
+        else:
+            # If we couldn't connect to *any* of the addresses, just
+            # bubble up the exception from the last attempt and deny
+            # knowledge of earlier failures.
+            raise err
+        # Send request and wrap response in a file descriptor
+        s.sendall((selector + CRLF).encode("UTF-8"))
+        return s.makefile(mode = "rb")
+
+    def send_query(self, selector, query, host, port=None):
+        """Send a selector and a query string."""
+        return self.send_selector(selector + '\t' + query, host, port)
+
     def set_prompt(self, tls):
         self.tls = tls
         if self.tls:
@@ -239,9 +293,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = send_query(gi.path, query_str, gi.host, gi.port or 70, self.tls, self.options["ipv6"], self.options["timeout"])
+                f = self.send_query(gi.path, query_str, gi.host, gi.port or 70)
             else:
-                f = send_selector(gi.path, gi.host, gi.port or 70, self.tls, self.options["ipv6"], self.options["timeout"])
+                f = self.send_selector(gi.path, gi.host, gi.port or 70)
             # Attempt to decode something that is supposed to be text
             # (which involves reading the entire file over the network
             # first)
@@ -954,66 +1008,6 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
         sys.exit()
 
     do_exit = do_quit
-
-# Code below started life as the core of the old gopherlib.py module
-# from Python 2.4, with minimal changes made for Python 3 compatibility
-# and to handle convenient download of plain text (including Unicode)
-# or binary files.  It's come a long way since then, though...
-
-# Default selector, host and port
-DEF_PORT     = 70
-
-# Names for characters and strings
-CRLF = '\r\n'
-
-def send_selector(selector, host, port=None, tls=False, ipv6=False,
-        timeout=10):
-    """Send a selector to a given host and port.
-Returns a binary file with the reply."""
-    if not port:
-        i = host.find(':')
-        if i >= 0:
-            host, port = host[:i], int(host[i+1:])
-    port = int(port) or DEF_PORT
-    # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
-    if socket.has_ipv6 and (ipv6 or "::" in host):
-        family_mask = 0
-    else:
-        family_mask = socket.AF_INET
-    addresses = socket.getaddrinfo(host, port, family=family_mask,
-            type=socket.SOCK_STREAM)
-    # Sort addresses so IPv6 ones come first
-    addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
-    # Verify that this sort works
-    if any(add[0] == socket.AF_INET6 for add in addresses):
-        assert addresses[0][0] == socket.AF_INET6
-    # Connect to remote host by any address possible
-    err = None
-    for address in addresses:
-        s = socket.socket(address[0], address[1])
-        s.settimeout(timeout)
-        if tls:
-            context = ssl.create_default_context()
-            # context.check_hostname = False
-            # context.verify_mode = ssl.CERT_NONE
-            s = context.wrap_socket(s, server_hostname = host)
-        try:
-            s.connect(address[4])
-            break
-        except OSError as e:
-            err = e
-    else:
-        # If we couldn't connect to *any* of the addresses, just
-        # bubble up the exception from the last attempt and deny
-        # knowledge of earlier failures.
-        raise err
-    # Send request and wrap response in a file descriptor
-    s.sendall((selector + CRLF).encode("UTF-8"))
-    return s.makefile(mode = "rb")
-
-def send_query(selector, query, host, port=0, tls=False, ipv6=False, timeout=10):
-    """Send a selector and a query string."""
-    return send_selector(selector + '\t' + query, host, port, tls, ipv6, timeout)
 
 # Config file finder
 def get_rcfile():
