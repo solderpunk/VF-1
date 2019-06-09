@@ -213,7 +213,7 @@ class GopherClient(cmd.Cmd):
     # Unicode) or binary files.  It's come a long way since then, though...
     def _send_request(self, gi, query=None):
         """Send a selector to a given host and port.
-        Returns a binary file with the reply."""
+        Returns the resolved address and binary file with the reply."""
         # Add query to selector
         if query:
             gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
@@ -252,7 +252,7 @@ class GopherClient(cmd.Cmd):
             raise err
         # Send request and wrap response in a file descriptor
         s.sendall((gi.path + CRLF).encode("UTF-8"))
-        return s.makefile(mode = "rb")
+        return address, s.makefile(mode = "rb")
 
     def _set_prompt(self, tls):
         self.tls = tls
@@ -288,9 +288,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = self._send_request(gi, query=query_str)
+                address, f = self._send_request(gi, query=query_str)
             else:
-                f = self._send_request(gi)
+                address, f = self._send_request(gi)
             # Attempt to decode something that is supposed to be text
             # (which involves reading the entire file over the network
             # first)
@@ -349,7 +349,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             encoding = None
         ## Write
         tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
-        tmpf.write(f.read())
+        size = tmpf.write(f.read())
         tmpf.close()
         self.tmp_filename = tmpf.name
 
@@ -369,6 +369,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
 
         # Update state
         self.gi = gi
+        self._log_visit(address, size)
         if update_hist:
             self._update_history(gi)
 
@@ -541,6 +542,9 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self.history = self.history[0:self.hist_index+1]
         self.history.append(gi)
         self.hist_index = len(self.history) - 1
+
+    def _log_visit(self, address, size):
+        pass
 
     def _get_active_tmpfile(self):
         return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
