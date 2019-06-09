@@ -207,24 +207,23 @@ class GopherClient(cmd.Cmd):
             "timeout" : 10,
         }
 
-    # The two methods below started life as the core of the old gopherlib.py
+    # This method below started life as the core of the old gopherlib.py
     # module from Python 2.4, with minimal changes made for Python 3
     # compatibility and to handle convenient download of plain text (including
     # Unicode) or binary files.  It's come a long way since then, though...
-    def send_selector(self, selector, host, port=None):
+    def send_request(self, gi, query=None):
         """Send a selector to a given host and port.
         Returns a binary file with the reply."""
-        if not port:
-            i = host.find(':')
-            if i >= 0:
-                host, port = host[:i], int(host[i+1:])
-        port = int(port) or 70
+        # Add query to selector
+        if query:
+            gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
+                    gi.itemtype, gi.name, gi.tls)
         # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
-        if socket.has_ipv6 and (self.options["ipv6"] or "::" in host):
+        if socket.has_ipv6 and (self.options["ipv6"] or "::" in gi.host):
             family_mask = 0
         else:
             family_mask = socket.AF_INET
-        addresses = socket.getaddrinfo(host, port, family=family_mask,
+        addresses = socket.getaddrinfo(gi.host, gi.port, family=family_mask,
                 type=socket.SOCK_STREAM)
         # Sort addresses so IPv6 ones come first
         addresses.sort(key=lambda add: add[0] == socket.AF_INET6, reverse=True)
@@ -252,12 +251,8 @@ class GopherClient(cmd.Cmd):
             # knowledge of earlier failures.
             raise err
         # Send request and wrap response in a file descriptor
-        s.sendall((selector + CRLF).encode("UTF-8"))
+        s.sendall((gi.path + CRLF).encode("UTF-8"))
         return s.makefile(mode = "rb")
-
-    def send_query(self, selector, query, host, port=None):
-        """Send a selector and a query string."""
-        return self.send_selector(selector + '\t' + query, host, port)
 
     def set_prompt(self, tls):
         self.tls = tls
@@ -293,9 +288,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = self.send_query(gi.path, query_str, gi.host, gi.port or 70)
+                f = self.send_request(gi, query=query_str)
             else:
-                f = self.send_selector(gi.path, gi.host, gi.port or 70)
+                f = self.send_request(gi)
             # Attempt to decode something that is supposed to be text
             # (which involves reading the entire file over the network
             # first)
