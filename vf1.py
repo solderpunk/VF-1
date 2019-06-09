@@ -1032,21 +1032,36 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
     def do_blackbox(self, *args):
         """Display contents of flight recorder, showing statistics for the
 current gopher browsing session."""
-        print("==============================")
-        print("DUMPING FLIGHT RECORDER MEMORY")
-        print("==============================")
+        lines = []
+        # Compute flight time
         now = time.time()
         delta = now - self.log["start_time"]
         hours, remainder = divmod(delta, 36060)
         minutes, seconds = divmod(remainder, 60)
-        print("Flight duration: %02d:%02d:%02d" % (hours, minutes, seconds))
-        for key, value in self.log.items():
-            if key == "start_time":
-                continue
-            print("%s: %s" % (key, str(value)))
-        print("Unique hosts visited: %d" % len(self.visited_hosts))
-        print("Unique IPv4 hosts visited: %d" % len([host for host in self.visited_hosts if host[0] == socket.AF_INET]))
-        print("Unique IPv6 hosts visited: %d" % len([host for host in self.visited_hosts if host[0] == socket.AF_INET6]))
+        # Count hosts
+        ipv4_hosts = len([host for host in self.visited_hosts if host[0] == socket.AF_INET])
+        ipv6_hosts = len([host for host in self.visited_hosts if host[0] == socket.AF_INET6])
+        # Assemble lines
+        lines.append(("Flight duration", "%02d:%02d:%02d" % (hours, minutes, seconds)))
+        lines.append(("",""))
+        lines.append(("Requests sent:", self.log["requests"]))
+        lines.append(("   IPv4 requests:", self.log["ipv4_requests"]))
+        lines.append(("   IPv6 requests:", self.log["ipv6_requests"]))
+        lines.append(("   TLS-secured requests:", self.log["tls_requests"]))
+        lines.append(("Bytes received:", self.log["bytes_recvd"]))
+        lines.append(("   IPv4 bytes:", self.log["ipv4_bytes_recvd"]))
+        lines.append(("   IPv6 bytes:", self.log["ipv6_bytes_recvd"]))
+        lines.append(("Unique hosts visited:", len(self.visited_hosts)))
+        lines.append(("   IPv4 hosts:", ipv4_hosts))
+        lines.append(("   IPv6 hosts:", ipv6_hosts))
+        lines.append(("",""))
+        lines.append(("Timeouts:", self.log["timeouts"]))
+        lines.append(("Refused connections:", self.log["refused_connections"]))
+        lines.append(("Reset connections:", self.log["reset_connections"]))
+        lines.append(("DNS failures:", self.log["dns_failures"]))
+        # Print
+        for key, value in lines:
+            print(key.ljust(24) + str(value).rjust(8))
 
     ### The end!
     def do_quit(self, *args):
