@@ -479,7 +479,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             os.unlink(self.idx_filename)
         tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
         self.idx_filename = tmpf.name
-        menu_lines = 0
         self.page_index = 0
         for line in f:
             if line.startswith("3"):
@@ -491,7 +490,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 return
             elif line.startswith("i"):
                 tmpf.write(line[1:].split("\t")[0] + "\n")
-                menu_lines += 1
             else:
                 try:
                     gi = gopheritem_from_line(line, self.tls)
@@ -504,7 +502,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                     continue
                 self.index.append(gi)
                 tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
-                menu_lines += 1
         tmpf.close()
 
         self.lookup = self.index
