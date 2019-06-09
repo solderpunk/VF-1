@@ -186,7 +186,7 @@ class GopherClient(cmd.Cmd):
 
     def __init__(self, tls=False):
         cmd.Cmd.__init__(self)
-        self.set_prompt(tls)
+        self._set_prompt(tls)
         self.tmp_filename = ""
         self.idx_filename = ""
         self.index = []
@@ -211,7 +211,7 @@ class GopherClient(cmd.Cmd):
     # module from Python 2.4, with minimal changes made for Python 3
     # compatibility and to handle convenient download of plain text (including
     # Unicode) or binary files.  It's come a long way since then, though...
-    def send_request(self, gi, query=None):
+    def _send_request(self, gi, query=None):
         """Send a selector to a given host and port.
         Returns a binary file with the reply."""
         # Add query to selector
@@ -254,7 +254,7 @@ class GopherClient(cmd.Cmd):
         s.sendall((gi.path + CRLF).encode("UTF-8"))
         return s.makefile(mode = "rb")
 
-    def set_prompt(self, tls):
+    def _set_prompt(self, tls):
         self.tls = tls
         if self.tls:
             self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
@@ -288,9 +288,9 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                f = self.send_request(gi, query=query_str)
+                f = self._send_request(gi, query=query_str)
             else:
-                f = self.send_request(gi)
+                f = self._send_request(gi)
             # Attempt to decode something that is supposed to be text
             # (which involves reading the entire file over the network
             # first)
@@ -360,7 +360,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 f.seek(0)
                 self._handle_index(f)
             else:
-                cmd_str = self.get_handler_cmd(gi)
+                cmd_str = self._get_handler_cmd(gi)
                 try:
                     subprocess.call(shlex.split(cmd_str % tmpf.name))
                 except FileNotFoundError:
@@ -372,7 +372,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         if update_hist:
             self._update_history(gi)
 
-    def get_handler_cmd(self, gi):
+    def _get_handler_cmd(self, gi):
         # First, get mimetype, either from itemtype or filename
         if gi.itemtype in _ITEMTYPE_TO_MIME:
             mimetype = _ITEMTYPE_TO_MIME[gi.itemtype]
@@ -530,7 +530,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             line = _ITEMTYPE_COLORS[gi.itemtype] + line + "\x1b[0m"
         return line
 
-    def show_lookup(self, offset=0, end=None, name=True, url=False):
+    def _show_lookup(self, offset=0, end=None, name=True, url=False):
         for n, gi in enumerate(self.lookup[offset:end]):
             print(self._format_gopheritem(n+offset+1, gi, name, url))
 
@@ -546,6 +546,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
 
     # Cmd implementation follows
+
     def default(self, line):
         if line.strip() == "EOF":
             return self.onecmd("quit")
@@ -732,7 +733,7 @@ Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
         elif line == "ls":
             old_lookup = self.lookup
             self.lookup = self.waypoints
-            self.show_lookup()
+            self._show_lookup()
             self.lookup = old_lookup
         elif line == "clear":
             self.waypoints = []
@@ -787,13 +788,13 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         """List contents of current index.
 Use 'ls -l' to see URLs."""
         self.lookup = self.index
-        self.show_lookup(url = "-l" in line)
+        self._show_lookup(url = "-l" in line)
         self.page_index = 0
 
     def do_history(self, *args):
         """Display history."""
         self.lookup = self.history
-        self.show_lookup(url=True)
+        self._show_lookup(url=True)
         self.page_index = 0
 
     def do_search(self, searchterm):
@@ -802,7 +803,7 @@ Use 'ls -l' to see URLs."""
             gi for gi in self.lookup if searchterm.lower() in gi.name.lower()]
         if results:
             self.lookup = results
-            self.show_lookup()
+            self._show_lookup()
             self.page_index = 0
         else:
             print("No results found.")
@@ -812,7 +813,7 @@ Use 'ls -l' to see URLs."""
         i = self.page_index
         if i > len(self.lookup):
             return
-        self.show_lookup(offset=i, end=i+10)
+        self._show_lookup(offset=i, end=i+10)
         self.page_index += 10
 
     ### Stuff that does something to most recently viewed item
@@ -824,14 +825,14 @@ Use 'ls -l' to see URLs."""
     @needs_gi
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
-        cmd_str = self.get_handler_cmd(self.gi)
+        cmd_str = self._get_handler_cmd(self.gi)
         cmd_str = cmd_str % self._get_active_tmpfile()
         subprocess.call("%s | less -R" % cmd_str, shell=True)
 
     @needs_gi
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
-        cmd_str = self.get_handler_cmd(self.gi)
+        cmd_str = self._get_handler_cmd(self.gi)
         cmd_str = cmd_str % self._get_active_tmpfile()
         subprocess.call("%s | fold -w 70 -s" % cmd_str, shell=True)
 
@@ -949,7 +950,7 @@ Use 'ls -l' to see URLs."""
                 words = line.strip().split()
                 links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
         self.lookup = links
-        self.show_lookup(name=False, url=True)
+        self._show_lookup(name=False, url=True)
 
     ### Bookmarking stuff
     @needs_gi
@@ -974,7 +975,7 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
     ### Security
     def do_tls(self, *args):
         """Engage or disengage battloid mode."""
-        self.set_prompt(not self.tls)
+        self._set_prompt(not self.tls)
         if self.tls:
             print("Battloid mode engaged! Only accepting encrypted connections.")
         else:
