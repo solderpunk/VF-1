@@ -378,7 +378,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 context = ssl.create_default_context()
                 # context.check_hostname = False
                 # context.verify_mode = ssl.CERT_NONE
-                s = context.wrap_socket(s, server_hostname = host)
+                s = context.wrap_socket(s, server_hostname = gi.host)
             try:
                 s.connect(address[4])
                 break
