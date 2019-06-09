@@ -714,9 +714,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
     def do_up(self, *args):
         """Go up one directory in the path."""
         gi = self.gi
-        if gi is None:
-            print("There is no path without a gopher menu")
-            return
         pathbits = os.path.split(self.gi.path)
         new_path = os.path.join(*pathbits[0:-1])
         new_gi = GopherItem(gi.host, gi.port, new_path, "1", gi.name, gi.tls)
