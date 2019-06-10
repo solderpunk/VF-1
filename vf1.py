@@ -121,11 +121,21 @@ GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
 
 def url_to_gopheritem(url):
-    if "::" in url and "/" not in url[len("gopher://"):]:
-        # Naked IPv6
-        u = collections.namedtuple("FakeUrl",("scheme","hostname","port","path"))("gopher",url[len("gopher://"):],None,"/")
-    else:
-        u = urllib.parse.urlparse(url)
+    # urllibparse.urlparse can handle IPv6 addresses, but only if they
+    # are formatted very carefully, in a way that users almost
+    # certainly won't expect.  So, catch them early and try to fix
+    # them...
+    if url.count(":") > 1: # Best way to detect them?
+        url = fix_ipv6_url(url)
+    # Prepend a gopher schema if none given
+    if "://" not in url:
+        url = "gopher://" + url
+    print(url)
+    u = urllib.parse.urlparse(url)
+    print(u)
+    print(u.hostname)
+    # urlparse leaves IPv6 addresses wrapped in []s, but if we leave those
+    # in then getaddrinfo will choke on them later, so take them off...
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
     if u.path and u.path[0] == '/' and len(u.path) > 1:
@@ -137,6 +147,26 @@ def url_to_gopheritem(url):
     return GopherItem(u.hostname, u.port or 70, path,
                       str(itemtype), "<direct URL>",
                       True if u.scheme == "gophers" else False)
+
+def fix_ipv6_url(url):
+    # If there's a pair of []s in there, it's probably fine as is.
+    if "[" in url and "]" in url:
+        return url
+    # Easiest case is a raw address, no schema, no path.
+    # Just wrap it in square brackets and whack a slash on the end
+    if "/" not in url:
+        return "[" + url + "]/"
+    # Now the trickier cases...
+    if "://" in url:
+        schema, schemaless = url.split("://")
+    else:
+        schema, schemaless = None, url
+    if "/" in schemaless:
+        netloc, rest = schemaless.split("/",1)
+        schemaless = "[" + netloc + "]" + "/" + rest
+    if schema:
+        return schema + "://" + schemaless
+    return schemaless
 
 def gopheritem_to_url(gi):
     if gi and gi.host:
@@ -361,9 +391,15 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
                     gi.itemtype, gi.name, gi.tls)
         # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
-        if socket.has_ipv6 and (self.options["ipv6"] or "::" in gi.host):
+        if ":" in gi.host:
+            # This is likely a literal IPv6 address, so we can *only* ask for
+            # IPv6 addresses or getaddrinfo will complain
+            family_mask = socket.AF_INET6
+        elif socket.has_ipv6 and self.options["ipv6"]:
+            # Accept either IPv4 or IPv6 addresses
             family_mask = 0
         else:
+            # IPv4 only
             family_mask = socket.AF_INET
         addresses = socket.getaddrinfo(gi.host, gi.port, family=family_mask,
                 type=socket.SOCK_STREAM)
@@ -703,10 +739,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 print("Must use battloid mode to enter battlezone.")
                 print("Use 'tls' to toggle battloid mode.")
                 return
-            elif not self.tls and not url.startswith("gopher://"):
-                url = "gopher://" + url
-            elif self.tls and not url.startswith("gophers://"):
-                url = "gophers://" + url
             gi = url_to_gopheritem(url)
             self._go_to_gi(gi)
 
