@@ -215,7 +215,7 @@ class GopherClient(cmd.Cmd):
 
     def __init__(self, tls=False):
         cmd.Cmd.__init__(self)
-        self._set_prompt(tls)
+        self._set_tls(tls)
         self.tmp_filename = ""
         self.idx_filename = ""
         self.index = []
@@ -623,7 +623,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             self.log["ipv6_requests"] += 1
             self.log["ipv6_bytes_recvd"] += size
 
-    def _set_prompt(self, tls):
+    def _set_tls(self, tls):
         self.tls = tls
         if self.tls:
             self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
@@ -1048,7 +1048,7 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
     ### Security
     def do_tls(self, *args):
         """Engage or disengage battloid mode."""
-        self._set_prompt(not self.tls)
+        self._set_tls(not self.tls)
         if self.tls:
             print("Battloid mode engaged! Only accepting encrypted connections.")
         else:
