@@ -334,9 +334,9 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             return
 
         # Catch non-recoverable errors
-        except (OSError, ssl.SSLError) as err:
+        except Exception as err:
             print("ERROR: " + str(err))
-            if (isinstance(err, (ssl.SSLError)) and err.reason == "UNKNOWN_PROTOCOL") or (isinstance(err, OSError) and err.reason == "WRONG_VERSION_NUMBER"):
+            if isinstance(err, ssl.SSLError):
                 print(gopheritem_to_url(gi) + " is probably not encrypted.")
                 print("Use 'tls' to disable encryption.")
             return
