@@ -130,10 +130,7 @@ def url_to_gopheritem(url):
     # Prepend a gopher schema if none given
     if "://" not in url:
         url = "gopher://" + url
-    print(url)
     u = urllib.parse.urlparse(url)
-    print(u)
-    print(u.hostname)
     # urlparse leaves IPv6 addresses wrapped in []s, but if we leave those
     # in then getaddrinfo will choke on them later, so take them off...
     # https://tools.ietf.org/html/rfc4266#section-2.1
