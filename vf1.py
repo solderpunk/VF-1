@@ -276,6 +276,17 @@ class GopherClient(cmd.Cmd):
             return
 
         # From here on in, it's gopher only
+
+        # Enforce "no surprises" policy re: crypto
+        if self.tls and not gi.tls:
+            print("Cannot enter demilitarized zone in battloid.")
+            print("Use 'tls' to toggle battloid mode.")
+            return
+        elif not self.tls and gi.tls:
+            print("Must use battloid mode to enter battlezone.")
+            print("Use 'tls' to toggle battloid mode.")
+            return
+
         # Do everything which touches the network in one block,
         # so we only need to catch exceptions once
         try:
@@ -728,14 +739,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         # If this isn't a mark, treat it as a URL
         else:
             url = line
-            if self.tls and url.startswith("gopher://"):
-                print("Cannot enter demilitarized zone in battloid.")
-                print("Use 'tls' to toggle battloid mode.")
-                return
-            elif not self.tls and url.startswith("gophers://"):
-                print("Must use battloid mode to enter battlezone.")
-                print("Use 'tls' to toggle battloid mode.")
-                return
             gi = url_to_gopheritem(url)
             self._go_to_gi(gi)
 
