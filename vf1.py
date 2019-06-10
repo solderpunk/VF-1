@@ -216,18 +216,19 @@ class GopherClient(cmd.Cmd):
     def __init__(self, tls=False):
         cmd.Cmd.__init__(self)
         self._set_tls(tls)
-        self.tmp_filename = ""
+        self.gi = None
+        self.history = []
+        self.hist_index = 0
         self.idx_filename = ""
         self.index = []
         self.index_index = -1
-        self.history = []
-        self.hist_index = 0
-        self.page_index = 0
         self.lookup = self.index
-        self.gi = None
-        self.waypoints = []
         self.marks = {}
         self.mirrors = {}
+        self.page_index = 0
+        self.tmp_filename = ""
+        self.visited_hosts = set()
+        self.waypoints = []
 
         self.options = {
             "color_menus" : False,
@@ -250,10 +251,7 @@ class GopherClient(cmd.Cmd):
             "reset_connections": 0,
             "timeouts": 0,
         }
-        self.visited_hosts = set()
-        self.itemtype_counts = {}
-        for itemtype in "0 1 7 8 9 h g s I T".split():
-            self.itemtype_counts[itemtype] = 0
+        self.itemtype_counts = { itemtype: 0 for itemtype in "0 1 7 8 9 h g s I T".split()}
 
     def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
         """This method might be considered "the heart of VF-1".
