@@ -232,6 +232,7 @@ class GopherClient(cmd.Cmd):
 
         self.options = {
             "color_menus" : False,
+            "debug" : False,
             "encoding" : "iso-8859-1",
             "ipv6" : False,
             "timeout" : 10,
@@ -363,6 +364,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         size = tmpf.write(f.read())
         tmpf.close()
         self.tmp_filename = tmpf.name
+        self._debug("Wrote %d bytes to %s." % (size, self.tmp_filename))
 
         # Pass file to handler, unless we were asked not to
         if handle:
@@ -417,6 +419,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         # Connect to remote host by any address possible
         err = None
         for address in addresses:
+            self._debug("Connecting to: " + str(address[4]))
             s = socket.socket(address[0], address[1])
             s.settimeout(self.options["timeout"])
             if self.tls:
@@ -464,6 +467,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 # As above, this is "weird audio".
                 # Pretend it's an mp3?
                 mimetype = "audio/mpeg"
+        self._debug("Assigned MIME type: %s" % mimetype)
 
         # Now look for a handler for this mimetype
         # Consider exact matches before wildcard matches
@@ -480,6 +484,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         else:
             # Use "xdg-open" as a last resort.
             cmd_str = "xdg-open %s"
+        self._debug("Using handler: %s" % cmd_str)
         return cmd_str
 
     def _decode_text(self, f):
@@ -497,13 +502,16 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             text = raw_bytes.decode("UTF-8")
         except UnicodeError:
             # If we have chardet, try the magic
+            self._debug("Could not decode response as UTF-8.")
             if _HAS_CHARDET:
                 autodetect = chardet.detect(raw_bytes)
                 # Make sure we're vaguely certain
                 if autodetect["confidence"] > 0.5:
+                    self._debug("Trying encoding %s as recommended by chardet." % autodetect["encoding"])
                     text = raw_bytes.decode(autodetect["encoding"])
                 else:
                     # Try the user-specified encoding
+                    self._debug("Trying fallback encoding %s." % self.options["encoding"])
                     text = raw_bytes.decode(self.options["encoding"])
             else:
                 # Try the user-specified encoding
@@ -537,6 +545,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 except:
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
+                    self._debug("Ignoring menu line: %s" % line)
                     continue
                 if gi.itemtype == "+":
                     self._register_redundant_server(gi)
@@ -576,6 +585,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         if target not in self.mirrors:
             self.mirrors[target] = []
         self.mirrors[target].append((gi.host, gi.port, gi.path))
+        self._debug("Registered redundant mirror %s" % gopheritemi_to_url(gi))
 
     def _get_mirror_gi(self, gi):
         # Search for a redundant mirror that matches this GI
@@ -630,6 +640,12 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
 
     def _get_active_tmpfile(self):
         return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
+
+    def _debug(self, debug_text):
+        if not self.options["debug"]:
+            return
+        debug_text = "\x1b[0;32m[DEBUG] " + debug_text + "\x1b[0m"
+        print(debug_text)
 
     # Cmd implementation follows
 
