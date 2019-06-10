@@ -726,7 +726,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         # or a local file
         elif os.path.exists(os.path.expanduser(line)):
             gi = GopherItem(None, None, os.path.expanduser(line),
-                            "1", line, self.tls)
+                            "1", line, False)
             self._go_to_gi(gi)
         # If this isn't a mark, treat it as a URL
         else:
