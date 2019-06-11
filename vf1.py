@@ -140,7 +140,7 @@ def url_to_gopheritem(url):
         # Use item type 1 for top-level selector
         itemtype = 1
     return GopherItem(u.hostname, u.port or 70, path,
-                      str(itemtype), "<direct URL>",
+                      str(itemtype), None,
                       True if u.scheme == "gophers" else False)
 
 def fix_ipv6_url(url):
@@ -560,17 +560,20 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         cmd_str = _MIME_HANDLERS["text/plain"]
         subprocess.call(shlex.split(cmd_str % self.idx_filename))
 
-    def _format_gopheritem(self, index, gi, name=True, url=False):
+    def _format_gopheritem(self, index, gi, url=False):
         line = "[%d] " % index
         # Add item name, with itemtype indicator for non-text items
-        if name:
+        if gi.name:
             line += gi.name
-            if gi.itemtype in _ITEMTYPE_TITLES:
-                line += _ITEMTYPE_TITLES[gi.itemtype]
-            elif gi.itemtype == "1":
+        # Use URL in place of name if we didn't get here from a menu
+        else:
+            line += gopheritem_to_url(gi)
+        if gi.itemtype in _ITEMTYPE_TITLES:
+            line += _ITEMTYPE_TITLES[gi.itemtype]
+        elif gi.itemtype == "1" and not line.endswith("/"):
                 line += "/"
         # Add URL if requested
-        if url:
+        if gi.name and url:
             line += " (%s)" % gopheritem_to_url(gi)
         # Colourise
         if self.options["color_menus"] and gi.itemtype in _ITEMTYPE_COLORS:
@@ -602,9 +605,9 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 gi.itemtype, gi.name, gi.tls)
         return new_gi
 
-    def _show_lookup(self, offset=0, end=None, name=True, url=False):
+    def _show_lookup(self, offset=0, end=None, url=False):
         for n, gi in enumerate(self.lookup[offset:end]):
-            print(self._format_gopheritem(n+offset+1, gi, name, url))
+            print(self._format_gopheritem(n+offset+1, gi, url))
 
     def _update_history(self, gi):
         # Don't duplicate
@@ -992,7 +995,7 @@ Use 'ls -l' to see URLs."""
                     # Attempt to derive a nice filename from the gopher
                     # item name, falling back to the hostname if there
                     # is no item name
-                    if gi.name == "<direct URL>":
+                    if not gi.name:
                         filename = gi.host.lower() + ".txt"
                     else:
                         filename = gi.name.lower().replace(" ","_") + ".txt"
@@ -1036,7 +1039,7 @@ Use 'ls -l' to see URLs."""
                 words = line.strip().split()
                 links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
         self.lookup = links
-        self._show_lookup(name=False, url=True)
+        self._show_lookup()
 
     ### Bookmarking stuff
     @needs_gi
