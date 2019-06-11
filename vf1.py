@@ -362,7 +362,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         size = tmpf.write(f.read())
         tmpf.close()
         self.tmp_filename = tmpf.name
-        self._debug("Wrote %d bytes to %s." % (size, self.tmp_filename))
+        self._debug("Wrote %d byte response to %s." % (size, self.tmp_filename))
 
         # Pass file to handler, unless we were asked not to
         if handle:
@@ -436,6 +436,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             # knowledge of earlier failures.
             raise err
         # Send request and wrap response in a file descriptor
+        self._debug("Sending %s<CRLF>" % gi.path)
         s.sendall((gi.path + CRLF).encode("UTF-8"))
         return address, s.makefile(mode = "rb")
 
