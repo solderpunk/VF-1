@@ -131,8 +131,6 @@ def url_to_gopheritem(url):
     if "://" not in url:
         url = "gopher://" + url
     u = urllib.parse.urlparse(url)
-    # urlparse leaves IPv6 addresses wrapped in []s, but if we leave those
-    # in then getaddrinfo will choke on them later, so take them off...
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
     if u.path and u.path[0] == '/' and len(u.path) > 1:
