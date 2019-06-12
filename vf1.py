@@ -125,7 +125,7 @@ def url_to_gopheritem(url):
     # are formatted very carefully, in a way that users almost
     # certainly won't expect.  So, catch them early and try to fix
     # them...
-    if url.count(":") > 1: # Best way to detect them?
+    if url.count(":") > 2: # Best way to detect them?
         url = fix_ipv6_url(url)
     # Prepend a gopher schema if none given
     if "://" not in url:
