@@ -120,7 +120,7 @@ CRLF = '\r\n'
 GopherItem = collections.namedtuple("GopherItem",
         ("host", "port", "path", "itemtype", "name", "tls"))
 
-def url_to_gopheritem(url):
+def url_to_gopheritem(url, tls=False):
     # urllibparse.urlparse can handle IPv6 addresses, but only if they
     # are formatted very carefully, in a way that users almost
     # certainly won't expect.  So, catch them early and try to fix
@@ -129,7 +129,7 @@ def url_to_gopheritem(url):
         url = fix_ipv6_url(url)
     # Prepend a gopher schema if none given
     if "://" not in url:
-        url = "gopher://" + url
+        url = ("gophers://" if tls else "gopher://") + url
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
@@ -754,7 +754,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         # If this isn't a mark, treat it as a URL
         else:
             url = line
-            gi = url_to_gopheritem(url)
+            gi = url_to_gopheritem(url, self.tls)
             self._go_to_gi(gi)
 
     @needs_gi
@@ -828,7 +828,7 @@ Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
         elif line == "*":
             self.waypoints.extend(self.lookup)
         elif looks_like_url(line):
-            self.waypoints.append(url_to_gopheritem(line))
+            self.waypoints.append(url_to_gopheritem(line, self.tls))
         else:
             for index in line.split():
                 try:
