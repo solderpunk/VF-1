@@ -191,7 +191,7 @@ def gopheritem_from_line(line, tls):
 
 def gopheritem_to_line(gi, name=""):
     # Prepend itemtype to name
-    name = str(gi.itemtype) + (name or gi.name)
+    name = str(gi.itemtype) + ((name or gi.name) or gopheritem_to_url(gi))
     return "\t".join((name, gi.path, gi.host or "", str(gi.port))) + "\n"
 
 # Cheap and cheerful URL detector
