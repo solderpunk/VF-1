@@ -276,13 +276,12 @@ class GopherClient(cmd.Cmd):
 
         # Enforce "no surprises" policy re: crypto
         if self.tls and not gi.tls:
-            print("Cannot enter demilitarized zone in battloid.")
-            print("Use 'tls' to toggle battloid mode.")
+            print("Cannot enter demilitarized zone in battloid!")
+            print("Use 'tls' to disable battloid mode before leaving encrypted gopherspace.")
             return
         elif not self.tls and gi.tls:
-            print("Must use battloid mode to enter battlezone.")
-            print("Use 'tls' to toggle battloid mode.")
-            return
+            self._set_tls(True)
+            print("Enabling battloid mode to connect to encrypted server.")
 
         # Do everything which touches the network in one block,
         # so we only need to catch exceptions once
