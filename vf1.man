@@ -1,0 +1,65 @@
+.Dd June 14, 2019 
+.Dt VF1 1
+.Os All Operating Systems
+.Sh NAME
+.Nm VF-1 
+.Nd Command line gopher client.  High speed, low drag.
+.Sh SYNOPSIS
+.Nm vf1 
+.Op Fl h
+.Op Fl \-bookmarks
+.Op Fl \-tls
+.Op Ar URL ...
+.Sh DESCRIPTION
+The options are as follows: 
+.Bl -tag -width Ds
+.It Fl h
+.It Fl \-help
+Display a short help message and exit.
+.It Fl \-bookmarks
+Open your bookmarks.
+.It Fl \-tls
+Open in TLS mode. That is, all the links you're following are expected
+to go to TLS enabled servers. This is the equivalent of using the
+.Ic tls
+command to switch to TLS mode. ("Battloid mode engaged! Watch your
+back in Gopherspace!")
+.It Ar URL ...
+The Gopher URLs to open. If you just supply a hostname, the standard
+port is going to be used. The standard port is 70. If you provide more
+than one URL, these are queued in a
+.Em tour .
+Use the
+.Ic tour
+command to go to the next tour stop.
+.El
+.Sh FILES
+.\" the longest path name appearing in the list
+.Bl -tag -width ~/.vf1-bookmarks.txt -compact
+.It Pa ~/.vf1-bookmarks.txt
+This file stores your bookmarks. Use
+.Ic add
+to add the current URL to your bookmarks. Feel free to edit the file
+and rearrange the bookmarks using a text editor. This files is a
+simple gopher map.
+.El
+.Sh EXAMPLES
+Visit the zaibatsu:
+.Dl vf1 zaibatsu.circumlunar.space
+.Sh SEE ALSO
+Cross references and citations.
+.Sh CONFORMING TO
+.Nm
+is a gopher client conforming to RFC 1436
+.Aq Lk https://tools.ietf.org/html/rfc1436 .
+.Sh AUTHORS
+.An Solderpunk
+.Aq Mt solderpunk@sdf.org
+.An Alex Schroeder
+.Aq Mt alex@gnu.org
+.An Joseph Lyman
+.Aq Mt tfurrows@sdf.org
+.An Adam Mayer
+.Aq Lk https://github.com/phooky
+.An Paco Estaban
+.Aq Mt paco@onna.be
