@@ -37,10 +37,11 @@ command to go to the next tour stop.
 .Nm
 is built around an interactive command prompt, and has a very
 .Dq REPL
-feeling. You only need a small number of commands to get around, and
-most of them can be abbreviated to one or two chars, so with practice
-you can get around very quickly. You can safely unplug your mouse the
-entire time you are using
+feeling. You only need a small number of commands to get around, and most of
+them can be abbreviated to one or two chars, so with practice you can get
+around very quickly. There's a list of commands for reference on the
+.Sx COMMANDS
+section.  You can safely unplug your mouse the entire time you are using
 .Nm .
 :)
 .Pp
@@ -272,7 +273,7 @@ will be fed to
 Obviously if you do not have one of these programs installed, it will
 not work. Fear not, there's a way for you to customise these handler
 programs - see the
-.Dq Handlers
+.Sx Handlers
 section below for all the details.
 .Pp
 You probably need some bookmarks, right? Here's how to add the current
@@ -562,6 +563,141 @@ popular gopher site floodgap.com. If you routinely visit gopher sites
 encoded with some other encoding, consider using an RC file (see
 below) to automatically set your alternative encoding at start up.
 .Pp
+.Sh COMMANDS
+.Bl -tag -width 3n
+.It Ic add
+Adds the current URL to the bookmarks menu.
+
+You can abbreviate with
+.Ic a
+.It Ic back
+Goes back to the last gopher menu.
+
+You can abbreviate with
+.Ic b
+.It Ic blackbox
+Displays contents of flight recorder, showing statistics for the current gopher
+browsing session.
+
+You can abbreviate with
+.Ic bb
+.It Ic bookmarks
+Shows the current bookmarks menu.
+
+You can abbreviate with
+.Ic bm
+or
+.Ic book
+.It Ic fold
+Run most recently visited item through
+.Dq fold
+command.
+
+You can abbreviate with
+.Ic f
+.It Ic forward
+Go forward to the next gopher item.
+
+You can abbreviate with
+.Ic fo
+.It Ic go
+Go to a gopher URL or marked item.
+
+You can abbreviate with
+.Ic g
+.It Ic history
+Displays history.
+
+You can abbreviate with
+.Ic h
+or
+.Ic hist
+.It Ic less
+Run most recently visited item through
+.Dq less
+command.
+
+You can abbreviate with
+.Ic l
+.It Ic links
+Extract URLs from most recently visited item.
+
+You can abbreviate with
+.Ic li
+.It Ic mark
+Mark the current item with a single letter.  This letter can then be passed to
+the
+.Ic go
+command to return to the current item later.  Think of it like marks in vi.
+
+You can abbreviate with
+.Ic m
+.It Ic next
+Go to next item after current in index.
+
+You can abbreviate with
+.Ic n
+.It Ic previous
+Go to previous item before current in index.
+
+You can abbreviate with
+.Ic p
+or
+.Ic prev
+.It Ic quit
+Exit VF-1.
+
+You can abbreviate with
+.Ic q
+.It Ic reload
+Reload the current URL.
+
+You can abbreviate with
+.Ic r
+.It Ic save
+Save an item to the filesystem.
+.Sq save n filename
+saves menu item n to the specified filename.
+.Sq save filename
+saves the last viewed item to the specified filename.
+.Sq save n
+saves menu item n to an automagic filename.
+
+You can abbreviate with
+.Ic s
+.It Ic search
+Search index (case insensitive).
+
+You can abbreviate with
+.Ic se
+or
+.Ic /
+.It Ic tour
+Add index items as way points on a tour, which is basically a FIFO
+queue of gopher items.
+Items can be added with
+.Sq tour 1 2 3 4
+or ranges like
+.Sq tour 1-4 .
+All items in current menu can be added with
+.Sq tour * .
+Current tour can be listed with
+.Sq tour ls
+and scrubbed with
+.Sq tour clear .
+
+You can abbreviate with
+.Ic t
+.It Ic up
+Go up one directory in the path.
+
+You can abbreviate with
+.Ic u
+.It Ic veronica
+Submit a search query to the Veronica 2 search engine.
+
+You can abbreviate with
+.Ic v
 .Sh FILES
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
