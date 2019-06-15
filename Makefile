@@ -19,5 +19,5 @@ install-editable:
 
 pdf: vf1.pdf
 
-vf1.pdf: vf1.man
+vf1.pdf: vf1.1
 	groff -Tpdf -mdoc $< > $@
