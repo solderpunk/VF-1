@@ -11,8 +11,13 @@ dist:
 upload:
 	twine upload dist/*
 
-install-dev
+install-dev:
 	sudo pip3 install .
 
-install-editable
+install-editable:
 	sudo pip3 install -e .
+
+pdf: vf1.pdf
+
+vf1.pdf: vf1.1
+	groff -Tpdf -mdoc $< > $@
