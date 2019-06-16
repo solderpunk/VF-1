@@ -114,6 +114,10 @@ _ITEMTYPE_COLORS = {
     "T":        _ANSI_COLORS["purple"],   # Telnet
 }
 
+# Known TLS encrypted sites ("host:port").
+# We could initialize this from a file.
+battlezone = {}
+
 CRLF = '\r\n'
 
 # Lightweight representation of an item in Gopherspace
@@ -163,6 +167,17 @@ def fix_ipv6_url(url):
         return schema + "://" + schemaless
     return schemaless
 
+def record_battlezone(gi, tls):
+    if gi and gi.host:
+        battlezone["%s:%d" % (gi.host, int(gi.port))] = tls
+
+def is_battlezone(gi):
+    if gi and gi.host and gi.port:
+        id = "%s:%d" % (gi.host, int(gi.port))
+        if id in battlezone:
+            return battlezone[id]
+    return -1
+
 def gopheritem_to_url(gi):
     if gi and gi.host:
         return ("gopher%s://%s:%d/%s%s" % (
@@ -184,10 +199,12 @@ def gopheritem_from_line(line, tls):
         parts = parts[:-1]
     # Attempt to assign variables.  This may fail.
     # It's up to the caller to catch the Exception.
-    name, path, server, port = parts
+    name, path, host, port = parts
     itemtype = name[0]
     name = name[1:]
-    return GopherItem(server, port, path, itemtype, name, tls)
+    if host + ":" + port in battlezone:
+        tls = battlezone[host + ":" + port]
+    return GopherItem(host, port, path, itemtype, name, tls)
 
 def gopheritem_to_line(gi, name=""):
     # Prepend itemtype to name
@@ -275,11 +292,11 @@ class GopherClient(cmd.Cmd):
         # From here on in, it's gopher only
 
         # Enforce "no surprises" policy re: crypto
-        if self.tls and not gi.tls:
+        if self.tls and is_battlezone(gi) == 0:
             print("Cannot enter demilitarized zone in battloid!")
             print("Use 'tls' to disable battloid mode before leaving encrypted gopherspace.")
             return
-        elif not self.tls and gi.tls:
+        elif not self.tls and is_battlezone(gi) == 1:
             self._set_tls(True)
             print("Enabling battloid mode to connect to encrypted server.")
 
@@ -344,6 +361,9 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 print(gopheritem_to_url(gi) + " is probably not encrypted.")
                 print("Use 'tls' to disable encryption.")
             return
+
+        # Since this worked, record the TLS state
+        record_battlezone(gi, self.tls)
 
         # Save the result in a temporary file
         ## Delete old file
