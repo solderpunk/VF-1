@@ -1179,16 +1179,16 @@ def main():
 
     # Act on args
     if args.bookmarks:
-        gc.do_bookmarks()
+        gc.cmdqueue.append("bookmarks")
     elif args.url:
         if len(args.url) == 1:
-            gc.do_go(args.url[0])
+            gc.cmdqueue.append("go %s" % args.url[0])
         else:
             for url in args.url:
                 if not url.startswith("gopher://"):
                     url = "gopher://" + url
-                gc.do_tour(url)
-            gc.do_tour("")
+                gc.cmdqueue.append("tour %s" % url)
+            gc.cmdqueue.append("tour")
 
     # Endless interpret loop
     while True:
