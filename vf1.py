@@ -174,7 +174,7 @@ def gopheritem_to_url(gi):
     else:
         return ""
 
-def gopheritem_from_line(line, tls):
+def gopheritem_from_line(line, tls_host, tls_port):
     # Split on tabs.  Strip final element after splitting,
     # since if we split first we loose empty elements.
     parts = line.split("\t")
@@ -184,15 +184,28 @@ def gopheritem_from_line(line, tls):
         parts = parts[:-1]
     # Attempt to assign variables.  This may fail.
     # It's up to the caller to catch the Exception.
-    name, path, server, port = parts
+    name, path, host, port = parts
     itemtype = name[0]
     name = name[1:]
-    return GopherItem(server, port, path, itemtype, name, tls)
+    port = int(port)
+    # Handle the h-type URL: hack for secure links
+    if itemtype == "h" and path.startswith("URL:gopher"):
+        url = path[4:]
+        return url_to_gopheritem(url)
+    return GopherItem(host, port, path, itemtype, name,
+            host == tls_host and port == tls_port)
 
 def gopheritem_to_line(gi, name=""):
+    name = ((name or gi.name) or gopheritem_to_url(gi))
     # Prepend itemtype to name
-    name = str(gi.itemtype) + ((name or gi.name) or gopheritem_to_url(gi))
-    return "\t".join((name, gi.path, gi.host or "", str(gi.port))) + "\n"
+    if gi.tls:
+        # Use h-type URL: for secure links
+        name = "h" + name
+        path = "URL:" + gopheritem_to_url(gi)
+    else:
+        name = str(gi.itemtype) + name
+        path = gi.path
+    return "\t".join((name, path, gi.host or "", str(gi.port))) + "\n"
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
@@ -368,7 +381,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             # Process that file handler depending upon itemtype
             if gi.itemtype in ("1", "7"):
                 f.seek(0)
-                self._handle_index(f)
+                self._handle_index(f, gi)
             else:
                 cmd_str = self._get_handler_cmd(gi)
                 try:
@@ -521,7 +534,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         new_f.seek(0)
         return new_f
 
-    def _handle_index(self, f):
+    def _handle_index(self, f, index_gi):
         self.index = []
         if self.idx_filename:
             os.unlink(self.idx_filename)
@@ -539,7 +552,9 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 tmpf.write(line[1:].split("\t")[0] + "\n")
             else:
                 try:
-                    gi = gopheritem_from_line(line, self.tls)
+                    gi = gopheritem_from_line(line,
+                            index_gi.host if self.tls else None,
+                            index_gi.port if self.tls else None)
                 except:
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
