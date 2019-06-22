@@ -245,7 +245,7 @@ class GopherClient(cmd.Cmd):
             "color_menus" : False,
             "debug" : False,
             "encoding" : "iso-8859-1",
-            "ipv6" : False,
+            "ipv6" : True,
             "timeout" : 10,
         }
 
