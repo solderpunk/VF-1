@@ -224,7 +224,7 @@ def needs_gi(inner):
 
 class GopherClient(cmd.Cmd):
 
-    def __init__(self, tls=False):
+    def __init__(self, debug=False, tls=False):
         cmd.Cmd.__init__(self)
         self._set_tls(tls)
         self.gi = None
@@ -243,7 +243,7 @@ class GopherClient(cmd.Cmd):
 
         self.options = {
             "color_menus" : False,
-            "debug" : False,
+            "debug" : debug,
             "encoding" : "iso-8859-1",
             "ipv6" : True,
             "timeout" : 10,
@@ -1159,6 +1159,8 @@ def main():
     parser = argparse.ArgumentParser(description='A command line gopher client.')
     parser.add_argument('--bookmarks', action='store_true',
                         help='start with your list of bookmarks')
+    parser.add_argument('--debug', action='store_true',
+                        help='start with debugging mode enabled')
     parser.add_argument('url', metavar='URL', nargs='*',
                         help='start with this URL')
     parser.add_argument('--tls', action='store_true',
@@ -1166,7 +1168,7 @@ def main():
     args = parser.parse_args()
 
     # Instantiate client
-    gc = GopherClient(tls=args.tls)
+    gc = GopherClient(debug=args.debug, tls=args.tls)
 
     # Process config file
     rcfile = get_rcfile()
