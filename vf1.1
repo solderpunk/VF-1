@@ -148,7 +148,8 @@ To easily find gunnarfrost's phlog and then press
 to type the first entry.
 .Pp
 Short and sweet! Now, suppose you want to read his next post. You
-*could* use the
+.Em could 
+use the
 .Ic back
 command to go back to the menu listing and then press
 .Ic 2 ,
@@ -568,81 +569,45 @@ below) to automatically set your alternative encoding at start up.
 .Pp
 .Sh COMMANDS
 .Bl -tag -width 3n
-.It Ic add
+.It Ic add , Ic a
 Adds the current URL to the bookmarks menu.
-Abbrev.
-.Ic a
-.It Ic back
+.It Ic back , Ic b
 Goes back to the last gopher menu.
-Abbrev.
-.Ic b
-.It Ic blackbox
+.It Ic blackbox , Ic bb
 Displays contents of flight recorder, showing statistics for the current gopher
 browsing session.
-Abbrev.
-.Ic bb
-.It Ic bookmarks
+.It Ic bookmarks , Ic book , Ic bm
 Shows the current bookmarks menu.
-Abbrev.
-.Ic bm
-or
-.Ic book
-.It Ic fold
+.It Ic fold , Ic f
 Run most recently visited item through
 .Dq fold
 command.
-Abbrev.
-.Ic f
-.It Ic forward
+.It Ic forward , Ic fo
 Go forward to the next gopher item.
-Abbrev.
-.Ic fo
-.It Ic go
+.It Ic go , Ic g
 Go to a gopher URL or marked item.
-Abbrev.
-.Ic g
-.It Ic history
+.It Ic history , Ic hist , Ic h
 Displays history.
-Abbrev.
-.Ic h
-or
-.Ic hist
-.It Ic less
+.It Ic less , Ic l
 Run most recently visited item through
 .Dq less
 command.
-Abbrev.
-.Ic l
-.It Ic links
+.It Ic links , Ic li
 Extract URLs from most recently visited item.
-Abbrev.
-.Ic li
-.It Ic mark
+.It Ic mark , Ic m
 Mark the current item with a single letter.  This letter can then be passed to
 the
 .Ic go
 command to return to the current item later.  Think of it like marks in vi.
-Abbrev.
-.Ic m
-.It Ic next
+.It Ic next , Ic n
 Go to next item after current in index.
-Abbrev.
-.Ic n
-.It Ic previous
+.It Ic previous , Ic prev , Ic p
 Go to previous item before current in index.
-Abbrev.
-.Ic p
-or
-.Ic prev
-.It Ic quit
+.It Ic quit , Ic q
 Exit VF-1.
-Abbrev.
-.Ic q
-.It Ic reload
+.It Ic reload , Ic r
 Reload the current URL.
-Abbrev.
-.Ic r
-.It Ic save
+.It Ic save , Ic s
 Save an item to the filesystem.
 .Sq save n filename
 saves menu item n to the specified filename.
@@ -650,15 +615,9 @@ saves menu item n to the specified filename.
 saves the last viewed item to the specified filename.
 .Sq save n
 saves menu item n to an automagic filename.
-Abbrev.
-.Ic s
-.It Ic search
+.It Ic search , Ic se , Ic /
 Search index (case insensitive).
-Abbrev.
-.Ic se
-or
-.Ic /
-.It Ic tour
+.It Ic tour , Ic t
 Add index items as way points on a tour, which is basically a FIFO
 queue of gopher items.
 Items can be added with
@@ -671,16 +630,10 @@ Current tour can be listed with
 .Sq tour ls
 and scrubbed with
 .Sq tour clear .
-Abbrev.
-.Ic t
-.It Ic up
+.It Ic up , Ic u
 Go up one directory in the path.
-Abbrev.
-.Ic u
-.It Ic veronica
+.It Ic veronica , Ic v
 Submit a search query to the Veronica 2 search engine.
-Abbrev.
-.Ic v
 .El
 .Sh FILES
 .\" the longest path name appearing in the list
