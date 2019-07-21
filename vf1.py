@@ -5,7 +5,7 @@
 #  - Alex Schroeder <alex@gnu.org>
 #  - Joseph Lyman <tfurrows@sdf.org>
 #  - Adam Mayer (https://github.com/phooky)
-#  - Paco Estaban <paco@onna.be>
+#  - Paco Esteban <paco@onna.be>
 
 import argparse
 import cmd
