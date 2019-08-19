@@ -1,0 +1,337 @@
+.Dd June 25, 2019 
+.Dt VF1-TUTORIAL 7
+.Os All Operating Systems
+.Sh NAME
+.Nm vf1-tutorial
+.Nd a tutorial for the
+.Xr vf1 1
+command line gopher client
+.Sh USAGE
+.Xr vf1 1
+is built around an interactive command prompt, and has a very
+.Dq REPL
+feeling.
+You can safely unplug your mouse the entire time you are using
+.Xr vf1 1 .
+:)
+.Pp
+There's a comprehensive list of the available commands on the
+.Xr vf1 1
+man page.
+.Pp
+Start VF-1:
+.Pp
+.Dl vf1
+.Pp
+Well, let's start off by heading to SDF to check out some nice phlogs!
+Use the
+.Ic go
+command:
+.Pp
+.Dl VF-1> go sdf.org/
+.Pp
+If you are lazy, you can type
+.Ql g sdf.org/
+instead, i.e. you can abbreviate
+.Ic go
+to
+.Ic g .
+.Pp
+You should see a listing of the SDF Gopherspace.
+The different menu items are indicated by numbers in square brackets, and the
+SDF Member PHLOGOSPHERE is option [1], so go ahead and type
+.Ic 1
+and then enter:
+.Pp
+.Dl VF-1> 1
+.Pp
+You should see all the phlogs fly by, and unless you have a very large
+monitor some have probably run off the top of the screen.
+This will not be an uncommon problem, and there are various ways to deal with
+it.
+Obviously, you can scroll up in your terminal like always, but VF-1 gives you
+other ways to deal with this.
+After you have visited a gopher menu (as opposed to a document), if you just
+press Enter (i.e.\& execute an empty line), VF-1 will print the first 10 items
+in the menu by themselves (any ASCII art etc. in the original listing is
+removed in this mode).
+Each time you press Enter you will see the next ten items in the listing.
+Page through a few times to get a feel for it.
+There are other ways to deal with gopher menus which don't fit on one
+screen, but nothing is faster than just tapping Enter, so it's a good
+habit to pick up.
+.Pp
+If you just want to see which phlogs have been updated lately, seeing the first
+10 or 20 menu items is probably enough for you.
+But suppose you are really curious about one phlog in particular.
+Say you want to know what Tomasino has been up to.
+You could search for his phlog specifically:
+.Pp
+.Dl VF-1> search tom
+.Pp
+If you are lazy, you can use
+.Ic /
+instead of
+.Ic search ,
+i.e.\&
+.Ic / tom .
+.Pp
+This will show you the phlogs with
+.Dq tom
+in them (it's a simple case-insensitive search).
+Tomasino will probably be [1] or [2] (depends whether tomatobodhi has updated
+more recently :).
+So go ahead and type
+.Ic 1
+and hit enter again to enter Tomasino's gopherhole.
+Then you can type
+.Ic 2
+and enter to go to his phlog, and then
+.Ic 1
+and enter to read his most recent entry.
+.Pp
+Suppose now you want to go back to the main SDF phlog listing.
+Let's check out your history:
+.Pp
+.Dl VF-1> history
+.Pp
+If you are lazy, you can abbreviate
+.Ic history
+to
+.Ic hist ,
+and in fact if you are very lazy you can just use
+.Ic h .
+.Pp
+You should this time see a menu of the few places you've been so far.
+The phlogosphere list will probably be [2], so type
+.Ic 2
+and enter to go back there.
+By now you are probably getting the hang of using numbers to get around.
+.Pp
+For this next bit, let's focus on gunnarfrost's phlog, because he
+writes very nice short entries which work well for this.
+Once you're at the main phlog listing, do a:
+.Pp
+.Dl VF-1> search frost
+.Pp
+To easily find gunnarfrost's phlog and then press
+.Ic 1
+to type the first entry.
+.Pp
+Short and sweet!
+Now, suppose you want to read his next post.
+You
+.Em could 
+use the
+.Ic back
+command to go back to the menu listing and then press
+.Ic 2 ,
+and then do
+.Ic back
+and
+.Ic 3 ,
+.Ic back
+and
+.Ic 4 ,
+etc.
+But it's much easier to just type:
+.Pp
+.Dl VF-1> next
+.Pp
+Or, if you are lazy, just
+.Ic n .
+.Pp
+This will automatically take you to the next item in the most recently
+seen gopher menu after the one you just viewed.
+So you can just hit
+.Ic n
+and enter again and again to flip through the pages of gunnar's phlog.
+Each one is much shorter than a full screen, so this works very nicely.
+.Pp
+Lately gunnarfrost is a good phlogger and wraps his entries at 70 or 80 chars
+or thereabouts.
+But if you keep hitting
+.Ic n
+you'll get to early entries where the lines just keep going until your terminal
+wraps them (sorry, gunnarfrost, I don't mean to single you out here, plenty of
+other folk do this too!).
+Once you've found one of these, try running:
+.Pp
+.Dl VF-1> fold
+.Pp
+And VF-1 will wrap the lines at 80 chars for you (assuming you have the
+.Xr fold 1
+command installed on whatever system you are using).
+This isn't the only helper command of this kind available.
+Get back to the main SDF phlog listing (either by running
+.Ic back
+a few times or using
+.Ic hist
+and a number to jump straight to it) and go to my phlog.
+Unlike gunnarfrost, I appear to be physiologically incapable of writing phlog
+posts which are less than a few whole screens long.
+Go to one of these posts, and watch the lines fly by.
+Now try:
+.Pp
+.Dl VF-1> less
+.Pp
+This will pipe my giant entry through
+.Xr less 1 ,
+so you can move back and forth and read it.
+Just press
+.Ic q
+when you're done like usual to get your VF-1 prompt back.
+You can also use
+.Ic less
+to navigate long menus, and unlike hitting Enter to page
+through items 10 at a time,
+.Ic less
+will preserve non-entry lines, so you can see
+ASCII art etc.
+.Pp
+I usually have at least one reference at the end of that entry, formatted as
+a URL after an index number in square brackets.
+You might be tempted to pick up your mouse, highlight the URL, type
+.Ic go
+and then paste the URL to visit it.
+Put that rodent down!
+The mouse,
+that is, not the gopher.
+Instead, try this command:
+.Pp
+.Dl VF-1> links
+.Pp
+VF-1 will then scan the most recently viewed post for URLs.
+Well, actually, it scans for words (i.e. things separated by spaces) which
+contain "://" and at least one ".".
+This might not catch all URLs and it might sometimes catch things which are not
+URLs, but it works well enough for now.
+You will see a menu and now you can use numbers to follow any of those links
+without your mouse!
+.Pp
+If you want to know the URL of a document you are at so that you can refer to
+it, just do:
+.Pp
+.Dl VF-1> url
+.Pp
+If you want to save the document, just do:
+.Pp
+.Dl VF-1> save ~/some/random/path/somefilename.txt
+.Pp
+If you're in a hurry, you can just do:
+.Pp
+.Dl VF-1> save
+.Pp
+and VF-1 will try to derive a sensible filename from the current document's
+URL.
+There's no guarantee it will be pretty, or easy to remember, though.
+.Pp
+Everything so far has been text-based.
+Gopher items with itemtype 0 (text) are fed to the
+.Xr cat 1
+command by default, or to
+.Xr less 1
+or
+.Xr fold 1
+if you request it.
+But VF-1 can handle other itemtypes too.
+Image files with an item type of
+.Dq g
+or
+.Dq I
+will be opened using the
+.Xr feh 1
+image viewer (if installed).
+HTML content with an item type of
+.Dq h
+will be fed to
+.Ic lynx --dump ,
+and audio files with an item type of
+.Dq a
+will be fed to
+.Xr mpg123 1
+(e.g. you can listen to jynx's doom metal songs in this way).
+Obviously if you do not have one of these programs installed, it will
+not work.
+Fear not, there's a way for you to customise these handler programs - see the
+.Sx Handlers
+section below for all the details.
+.Pp
+You probably need some bookmarks, right?
+Here's how to add the current URL to your bookmarks.
+You can provide your own name, if you want.
+.Pp
+.Dl VF-1> add
+.Pp
+Or, if you are lazy as usual, just
+.Ic a .
+.Pp
+If you want to reorganize your bookmarks, just open
+.Pa ~/.vf1-bookmarks.txt
+using a text editor and do it.
+.Pp
+If you want to look at your bookmarks:
+.Pp
+.Dl VF-1> bookmarks
+.Pp
+If lazy, just
+.Ic bm .
+.Pp
+Now let's look at two tools for quick and easy navigation through gopherspace,
+tours and marks.
+.Pp
+Sometimes you're looking at a menu and it's very long but you know you
+want to look at few items, one after another.
+Assume you're looking at
+.Lk phlogosphere.org ,
+for example.
+How about adding the first four items to a
+.Ic tour
+and then going
+on that tour?
+.Pp
+.Bd -literal -offset indent
+VF-1> tour 1 2 3 4
+VF-1> tour
+.Ed
+.Pp
+Use the tour command without any arguments to go to the next stop.
+This is basically your stack of items to go to.
+And yes, you guessed it.
+Use
+.Ic t
+if you're feeling lazy.
+.Pp
+Actually, if you're really lazy, you can use ranges, too:
+.Pp
+.Bd -literal -offset indent
+VF-1> tour 1-4
+VF-1> tour
+.Ed
+.Pp
+But there's more.
+Let's say you're looking at something pretty interesting, like the list of all
+the phlogs on
+.Lk phlogosphere.org .
+How about marking this place with a letter, following some links, and
+then returning to this location not using a bunch of
+.Ic back
+and
+.Ic up
+commands but just that one letter?
+.Pp
+.Bd -literal -offset indent
+VF-1> mark x
+VF-1> ... do some stuff ...
+VF-1> go x
+.Ed
+.Pp
+And yes,
+.Ic m
+for the lazy.
+.Pp
+With this you now have a pretty good idea about how to use and navigate around
+on VF-1.
+Happy gophering !!
+.Sh SEE ALSO
+.Xr vf1 1

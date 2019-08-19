@@ -1,354 +1,55 @@
-.Dd June 14, 2019 
+.Dd June 25, 2019 
 .Dt VF1 1
 .Os All Operating Systems
 .Sh NAME
-.Nm VF-1 
-.Nd Command line gopher client.  High speed, low drag.
+.Nm vf1
+.Nd command line gopher client
 .Sh SYNOPSIS
-.Nm vf1 
+.Nm
 .Op Fl h
 .Op Fl \-bookmarks
 .Op Fl \-debug
 .Op Fl \-tls
-.Op Ar URL ...
+.Op Ar url ...
 .Sh DESCRIPTION
-The options are as follows: 
+.Nm
+is an interactive command line gopher client.
+It presents a prompt to the user, which can then enter commands to perform
+actions.
+.Pp
+You only need a small number of commands to get around, and most of
+them can be abbreviated to one or two chars, so with practice you can get
+around very quickly.
+See the
+.Sx COMMANDS
+section for more details.
+.Pp
+The options are as follows:
 .Bl -tag -width Ds
-.It Fl h
-.It Fl \-help
+.It Fl h , \-help
 Display a short help message and exit.
 .It Fl \-bookmarks
 Open your bookmarks.
 .It Fl \-debug
 Open with debug mode enabled.
 .It Fl \-tls
-Open in TLS mode. That is, all the links you're following are expected
-to go to TLS enabled servers. This is the equivalent of using the
+Open in TLS mode.
+That is, all the links you're following are expected to go to TLS enabled
+servers.
+This is the equivalent of using the
 .Ic tls
-command to switch to TLS mode:
-.Dq Battloid mode engaged! Watch your back in Gopherspace!
-.It Ar URL ...
-The Gopher URLs to open. If you just supply a hostname, the standard
-port is going to be used. The standard port is 70. If you provide more
-than one URL, these are queued in a
-.Em tour .
-Use the
-.Ic tour
-command to go to the next tour stop.
+command to switch to TLS mode.
+.It Ar url ...
+The Gopher URLs to open.
+If you just supply a hostname, the standard port is going to be used.
+The standard port is 70.
+If you provide more than one URL, these are queued in a
+.Ic tour .
 .El
-.Sh USAGE
-.Nm
-is built around an interactive command prompt, and has a very
-.Dq REPL
-feeling. You only need a small number of commands to get around, and most of
-them can be abbreviated to one or two chars, so with practice you can get
-around very quickly. There's a list of commands for reference on the
-.Sx COMMANDS
-section.  You can safely unplug your mouse the entire time you are using
-.Nm .
-:)
-.Pp
-Start
-.Nm :
-.Pp
-.Dl vf1
-.Pp
-Well, let's start off by heading to SDF to check out some nice phlogs!
-Use the
-.Ic go
-command:
-.Pp
-.Dl VF-1> go sdf.org/
-.Pp
-If you are lazy, you can type
-.Ic g sdf.org/
-instead, i.e. you can abbreviate
-.Ic go
-to
-.Ic g .
-.Pp
-You should see a listing of the SDF Gopherspace. The different menu
-items are indicated by numbers in square brackets, and the SDF Member
-PHLOGOSPHERE is option [1], so go ahead and type
-.Ic 1
-and then enter:
-.Pp
-.Dl VF-1> 1
-.Pp
-You should see all the phlogs fly by, and unless you have a very large
-monitor some have probably run off the top of the screen. This will
-not be an uncommon problem, and there are various ways to deal with
-it. Obviously, you can scroll up in your terminal like always, but
-.Nm
-gives you other ways to deal with this. After you have visited a
-gopher menu (as opposed to a document), if you just press Enter
-(i.e.\& execute an empty line),
-.Nm
-will print the first 10 items in the menu
-by themselves (any ASCII art etc. in the original listing is removed
-in this mode). Each time you press Enter you will see the next ten
-items in the listing. Page through a few times to get a feel for it.
-There are other ways to deal with gopher menus which don't fit on one
-screen, but nothing is faster than just tapping Enter, so it's a good
-habit to pick up.
-.Pp
-If you just want to see which phlogs have been updated lately, seeing
-the first 10 or 20 menu items is probably enough for you. But suppose
-you are really curious about one phlog in particular. Say you want to
-know what Tomasino has been up to. You could search for his phlog
-specifically:
-.Pp
-.Dl VF-1> search tom
-.Pp
-If you are lazy, you can use
-.Ic /
-instead of
-.Ic search ,
-i.e.\&
-.Ic / tom .
-.Pp
-This will show you the phlogs with
-.Dq tom
-in them (it's a simple case-insensitive search). Tomasino will
-probably be [1] or [2] (depends whether tomatobodhi has updated more
-recently :). So go ahead and type
-.Ic 1
-and hit enter again to enter Tomasino's gopherhole. Then you can type
-.Ic 2
-and enter to go to his phlog, and then
-.Ic 1
-and enter to read his most recent entry.
-.Pp
-Suppose now you want to go back to the main SDF phlog listing. Let's
-check out your history:
-.Pp
-.Dl VF-1> history
-.Pp
-If you are lazy, you can abbreviate
-.Ic history
-to
-.Ic hist ,
-and in fact if you are very lazy you can just use
-.Ic h .
-.Pp
-You should this time see a menu of the few places you've been so far.
-The phlogosphere list will probably be [2], so type
-.Ic 2
-and enter to go back there. By now you are probably getting the hang
-of using numbers to get around.
-.Pp
-For this next bit, let's focus on gunnarfrost's phlog, because he
-writes very nice short entries which work well for this. Once you're
-at the main phlog listing, do a:
-.Pp
-.Dl VF-1> search frost
-.Pp
-To easily find gunnarfrost's phlog and then press
-.Ic 1
-to type the first entry.
-.Pp
-Short and sweet! Now, suppose you want to read his next post. You
-*could* use the
-.Ic back
-command to go back to the menu listing and then press
-.Ic 2 ,
-and then do
-.Ic back
-and
-.Ic 3 ,
-.Ic back
-and
-.Ic 4 ,
-etc. But it's much easier to just type:
-.Pp
-.Dl VF-1> next
-.Pp
-Or, if you are lazy, just
-.Ic n .
-.Pp
-This will automatically take you to the next item in the most recently
-seen gopher menu after the one you just viewed. So you can just hit
-.Ic n
-and enter again and again to flip through the pages of gunnar's phlog.
-Each one is much shorter than a full screen, so this works very
-nicely.
-.Pp
-Lately gunnarfrost is a good phlogger and wraps his entries at 70 or
-80 chars or thereabouts. But if you keep hitting
-.Ic n
-you'll get to early entries where the lines just keep going until your
-terminal wraps them (sorry, gunnarfrost, I don't mean to single you
-out here, plenty of other folk do this too!). Once you've found one of
-these, try running:
-.Pp
-.Dl VF-1> fold
-.Pp
-And
-.Nm
-will wrap the lines at 80 chars for you (assuming you have
-the
-.Ic fold
-command installed on whatever system you are using). This isn't the
-only helper command of this kind available. Get back to the main SDF
-phlog listing (either by running
-.Ic back
-a few times or using
-.Ic hist
-and a number to jump straight to it) and go to my phlog. Unlike
-gunnarfrost, I appear to be physiologically incapable of writing phlog
-posts which are less than a few whole screens long. Go to one of these
-posts, and watch the lines fly by. Now try:
-.Pp
-.Dl VF-1> less
-.Pp
-This will pipe my giant entry through
-.Ic less ,
-so you can move back and forth and read it. Just press
-.Ic q
-when you're done like usual to get your
-.Nm
-prompt back. You can also
-use less to navigate long menus, and unlike hitting Enter to page
-through items 10 at a time, less will preserve non-entry lines, so you
-can see ASCII art etc.
-.Pp
-I usually have at least one reference at the end of that entry,
-formatted as a URL after an index number in square brackets. You might
-be tempted to pick up your mouse, highlight the URL, type
-.Ic go
-and then paste the URL to visit it. Put that rodent down! The mouse,
-that is, not the gopher. Instead, try this command:
-.Pp
-.Dl VF-1> links
-.Pp
-.Nm
-will then scan the most recently viewed post for URLs. Well,
-actually, it scans for words (i.e. things separated by spaces) which
-contain "://" and at least one ".". This might not catch all URLs and
-it might sometimes catch things which are not URLs, but it works well
-enough for now. You will see a menu and now you can use numbers to
-follow any of those links without your mouse!
-.Pp
-If you want to know the URL of a document you are at so that you can
-refer to it, just do:
-.Pp
-.Dl VF-1> url
-.Pp
-If you want to save the document, just do:
-.Pp
-.Dl VF-1> save ~/some/random/path/somefilename.txt
-.Pp
-If you're in a hurry, you can just do:
-.Pp
-.Dl VF-1> save
-.Pp
-and
-.Nm
-will try to derive a sensible filename from the current
-document's URL. There's no guarantee it will be pretty, or easy to
-remember, though.
-.Pp
-Everything so far has been text-based. Gopher items with itemtype 0
-(text) are fed to the
-.Ic cat
-command by default, or to
-.Ic less
-or
-.Ic fold
-if you request it. But
-.Nm
-can handle other itemtypes too. Image
-files with an item type of
-.Dq g
-or
-.Dq I
-will be opened using the
-.Ic feh
-image viewer (if installed). HTML content with an item type of
-.Dq h
-will be fed to
-.Ic lynx --dump ,
-and audio files with an item type of
-.Dq a
-will be fed to
-.Ic mpg123
-(e.g. you can listen to jynx's doom metal songs in this way).
-Obviously if you do not have one of these programs installed, it will
-not work. Fear not, there's a way for you to customise these handler
-programs - see the
-.Sx Handlers
-section below for all the details.
-.Pp
-You probably need some bookmarks, right? Here's how to add the current
-URL to your bookmarks. You can provide your own name, if you want.
-.Pp
-.Dl VF-1> add
-.Pp
-Or, if you are lazy as usual, just
-.Ic a .
-.Pp
-If you want to reorganize your bookmarks, just open
-.Pa ~/.vf1-bookmarks.txt
-using a text editor and do it.
-.Pp
-If you want to look at your bookmarks:
-.Pp
-.Dl VF-1> bookmarks
-.Pp
-If lazy, just
-.Ic bm .
-.Pp
-Now let's look at two tools for quick and easy navigation through
-gopherspace, tours and marks.
-.Pp
-Sometimes you're looking at a menu and it's very long but you know you
-want to look at few items, one after another. Assume you're looking at
-.Lk phlogosphere.org ,
-for example. How about adding the first four items
-to a *tour* and then going on that tour?
-.Pp
-.Bd -literal -offset indent
-VF-1> tour 1 2 3 4
-VF-1> tour
-.Ed
-.Pp
-Use the tour command without any arguments to go to the next stop.
-This is basically your stack of items to go to. And yes, you guessed
-it. Use
-.Ic t
-if you're feeling lazy.
-.Pp
-Actually, if you're really lazy, you can use ranges, too:
-.Pp
-.Bd -literal -offset indent
-VF-1> tour 1-4
-VF-1> tour
-.Ed
-.Pp
-But there's more. Let's say you're looking at something pretty
-interesting, like the list of all the phlogs on
-.Lk phlogosphere.org .
-How about marking this place with a letter, following some links, and
-then returning to this location not using a bunch of
-.Ic back
-and
-.Ic up
-commands but just that one letter?
-.Pp
-.Bd -literal -offset indent
-VF-1> mark x
-VF-1> ... do some stuff ...
-VF-1> go x
-.Ed
-.Pp
-And yes,
-.Ic m
-for the lazy.
-.Pp
 .Ss Concepts
-.Pp
-Let's make a few concpets which were implicit in the informal tutorial
-above implicit:
+Those are some key concepts to understand how
+.Nm
+works.
 .Bl -bullet
 .It
 .Nm
@@ -370,37 +71,41 @@ or
 .Ic history
 or
 .Ic links ,
-the results of these commands overwrite your current index. If you
-want to get your index back to being the most recently visited gopher
+the results of these commands overwrite your current index.
+If you want to get your index back to being the most recently visited gopher
 menu, you can use the
 .Ic ls
-command. Doing this means you lose your search results (your history
-doesn't go away, though).
+command.
+Doing this means you lose your search results (your history doesn't go away,
+though).
 .It
 The
 .Ic search
-command runs on whatever the current index is. This might not be the
-contents of a gopher menu. You can search your history, and in fact
-you can even search the results of an earlier search to narrow things
-down!
+command runs on whatever the current index is.
+This might not be the contents of a gopher menu.
+You can search your history, and in fact you can even search the results of an
+earlier search to narrow things down!
 .It
 In general,
 .Nm
-does not remember much. It always has some idea of the most recently
-visited gopher menu (i.e. itemtype 1) and the most recently visited
-gopher document (i.e. any other itemtype).
+does not remember much.
+It always has some idea of the most recently visited gopher menu (i.e. itemtype
+1) and the most recently visited gopher document (i.e. any other itemtype).
+The
 .Ic ls
-always operates on the most recently visited gopher
+command always operates on the most recently visited gopher
 .Em menu ,
-even if you have visited some documents since then. Commands like
+even if you have visited some documents since then.
+Commands like
 .Ic fold ,
 .Ic less
 and
 .Ic save
 operate on the most recently visited
 .Em document ,
-even if you have visited some menus since then. Basically everything
-operates one the most recently seen thing of the appropriate type.
+even if you have visited some menus since then.
+Basically everything operates one the most recently seen thing of the
+appropriate type.
 .El
 .Pp
 .Ss Handlers
@@ -408,21 +113,23 @@ operates one the most recently seen thing of the appropriate type.
 .Nm
 uses external programs as
 .Dq handlers
-to present gopherspace content to you. Even when you visit a plain
-text file with item type 0,
+to present gopherspace content to you.
+Even when you visit a plain text file with item type 0,
 .Nm
-spawns (by default) the unix command
-.Ic cat
+spawns (by
+default) the unix command
+.Xr cat 1
 to display that file on your screen, rather than using a Python
-.Ic print
-call. You have full control over which external programs are used for
-different content, so you can customise your user experience.
+.Fn print
+call.
+You have full control over which external programs are used for different
+content, so you can customise your user experience.
 .Pp
-Handlers are assigned on the basis of MIME types. The gopher protocol
-has no concept of MIME, so
+Handlers are assigned on the basis of MIME types.
+The gopher protocol has no concept of MIME, so
 .Nm
-assigns each item a MIME type as
-follows:
+assigns each item a MIME
+type as follows:
 .Bl -bullet
 .It
 Item types 0 and 1 are assigned MIME type
@@ -437,12 +144,13 @@ Item type g is assigned MIME type
 .Pp
 For all other item types,
 .Nm
-attempts to guess a MIME type from the
-file extension of the last component of the selector, using the
+attempts to guess a MIME type from the file
+extension of the last component of the selector, using the
 .Ql mimetypes
-module from the Python standard library. This usually results in a
-reliable identification assuming the file has an extension and the
-author of the gopher content is not actively trying to deceive you.
+module from the Python standard library.
+This usually results in a reliable identification assuming the file has an
+extension and the author of the gopher content is not actively trying to
+deceive you.
 .Pp
 If the selector has no file extension, or the extension is not
 recognised by the
@@ -450,7 +158,7 @@ recognised by the
 module,
 .Nm
 will use the unix program
-.Ic file
+.Xr file 1
 to attempt to guess a MIME type by actually inspecting the content of
 the file.
 .Pp
@@ -472,14 +180,17 @@ will default to
 .Ql image/jpeg
 or
 .Ql audio/mpeg
-respectively. This should only happen in highly unusual circumstances
-and suggests a poorly or maliciously configured gopher server.
+respectively.
+This should only happen in highly unusual circumstances and suggests a poorly
+or maliciously configured gopher server.
 .Pp
-Once a MIME type has been identified for an item, an appropriate
-handler program will be used to handle the content. You can view a
-list of the current handler assignments at any time by running the
+Once a MIME type has been identified for an item, an appropriate handler
+program will be used to handle the content.
+You can view a list of the current handler assignments at any time by running
+the
 .Ic handler
-command. The default handlers that ship with
+command.
+The default handlers that ship with
 .Nm
 are:
 .Bl -column -offset indent "application/pdf" "lynx -dump -force_html %s"
@@ -494,22 +205,22 @@ are:
 .Pp
 You can also use the
 .Ic handler
-command to change these handlers, or set handlers for new MIME types
+command to change these handlers, or set handlers for new MIME types.
 For example, if you prefer using
-.Ic w3m
+.Xr w3m 1
 over
-.Ic lynx
+.Xr lynx 1
 for handling HTML content, you could run:
 .Pp
 .Dl VF-1> handler text/html w3m -dump %s
 .Pp
 You can use the
-.Dl *
+.Ql *
 wildcard when specifying handler MIME types, such as
 .Ql image/*
-to use a single program to handle any kind of image. Handlers without
-wildcards take precedence over handlers with wildcards. In other
-words, if you specify, e.g. one handler for
+to use a single program to handle any kind of image.
+Handlers without wildcards take precedence over handlers with wildcards.
+In other words, if you specify, e.g. one handler for
 .Ql image/jpeg
 and a different handler for
 .Ql image/* ,
@@ -523,9 +234,9 @@ handler will be used for all other images.
 .Pp
 .Nm
 attempts to decode the content received for any text-based item
-types (e.g. 0, 1, 7, h) as UTF-8. Most content in gopherspace is
-ASCII-encoded, and since UTF-8 is backward compatible with ASCII, this
-will generally
+types (e.g. 0, 1, 7, h) as UTF-8.
+Most content in gopherspace is ASCII-encoded, and since UTF-8 is backward
+compatible with ASCII, this will generally
 .Dq just work .
 If the received content
 .Em cannot
@@ -536,8 +247,8 @@ If the
 Python module is installed on your system,
 .Nm
 will use it to attempt to
-automatically detect the encoding used and decode the text
-appropriately. Note that pip etc. will not install
+automatically detect the encoding used and decode the text appropriately.
+Note that pip etc. will not install
 .Ql chardet
 for you when you install
 .Nm ,
@@ -556,131 +267,88 @@ is not installed, or if
 .Ql chardet
 cannot identify an encoding with confidence exceeding 0.5,
 .Nm
-will attempt to fall back to a single, user-specified alternative
-encoding. This encoding can be set as follows:
+will attempt to
+fall back to a single, user-specified alternative encoding.
+This encoding can be set as follows:
 .Pp
 .Dl VF-1> set encoding koi8-r
 .Pp
 The default fall back encoding is iso-8559-1, which is used by the
-popular gopher site floodgap.com. If you routinely visit gopher sites
-encoded with some other encoding, consider using an RC file (see
-below) to automatically set your alternative encoding at start up.
-.Pp
+popular gopher site
+.Lk floodgap.com .
+If you routinely visit gopher sites encoded with some other encoding, consider
+using an RC file (see below) to automatically set your alternative encoding at
+start up.
 .Sh COMMANDS
-.Bl -tag -width 3n
-.It Ic add
-Adds the current URL to the bookmarks menu.
-Abbrev.
-.Ic a
-.It Ic back
-Goes back to the last gopher menu.
-Abbrev.
-.Ic b
-.It Ic blackbox
-Displays contents of flight recorder, showing statistics for the current gopher
+.Bl -tag -width Ds
+.It Ic a , add
+Add the current URL to the bookmarks menu.
+.It Ic b , back
+Go back to the last gopher menu.
+.It Ic bb , blackbox
+Display contents of flight recorder, showing statistics for the current gopher
 browsing session.
-Abbrev.
-.Ic bb
-.It Ic bookmarks
-Shows the current bookmarks menu.
-Abbrev.
-.Ic bm
-or
-.Ic book
-.It Ic fold
-Run most recently visited item through
-.Dq fold
+.It Ic bm , book , bookmarks
+Show the current bookmarks menu.
+.It Ic f , fold
+Process the text of the most recently visited item with the
+.Xr fold 1
 command.
-Abbrev.
-.Ic f
-.It Ic forward
+.It Ic fo , forward
 Go forward to the next gopher item.
-Abbrev.
-.Ic fo
-.It Ic go
+.It Ic g , go Ar url | mark
 Go to a gopher URL or marked item.
-Abbrev.
-.Ic g
-.It Ic history
-Displays history.
-Abbrev.
-.Ic h
-or
-.Ic hist
-.It Ic less
-Run most recently visited item through
-.Dq less
+.It Ic handler Op Ar mimetype Ar program
+List or set handlers for different MIME types.
+.It Ic h , hist , history
+Display history.
+.It Ic l , less
+Process the text of the most recently visited item with the
+.Xr less 1
 command.
-Abbrev.
-.Ic l
-.It Ic links
+.It Ic li , links
 Extract URLs from most recently visited item.
-Abbrev.
-.Ic li
-.It Ic mark
-Mark the current item with a single letter.  This letter can then be passed to
-the
+.It Ic m , mark Ar mark
+Mark the current item with a single letter.
+This letter can then be passed to the
 .Ic go
-command to return to the current item later.  Think of it like marks in vi.
-Abbrev.
-.Ic m
-.It Ic next
+command to return to the current item later.
+Think of it like marks in vi.
+.It Ic n , next
 Go to next item after current in index.
-Abbrev.
-.Ic n
-.It Ic previous
+.It Ic p , prev, previous
 Go to previous item before current in index.
-Abbrev.
-.Ic p
-or
-.Ic prev
-.It Ic quit
+.It Ic q , quit
 Exit VF-1.
-Abbrev.
-.Ic q
-.It Ic reload
+.It Ic r , reload
 Reload the current URL.
-Abbrev.
-.Ic r
-.It Ic save
+.It Ic s , save Op Ar filename
 Save an item to the filesystem.
-.Sq save n filename
+.Ic save Cm n Cm filename
 saves menu item n to the specified filename.
-.Sq save filename
+.Ic save Cm filename
 saves the last viewed item to the specified filename.
-.Sq save n
+.Ic save Cm n
 saves menu item n to an automagic filename.
-Abbrev.
-.Ic s
-.It Ic search
+.It Ic / , se , search Ar pattern
 Search index (case insensitive).
-Abbrev.
-.Ic se
-or
-.Ic /
-.It Ic tour
+.It Ic t , tour Op Ar item ...
 Add index items as way points on a tour, which is basically a FIFO
 queue of gopher items.
 Items can be added with
-.Sq tour 1 2 3 4
+.Ic tour Cm "1 2 3 4"
 or ranges like
-.Sq tour 1-4 .
+.Ic tour Cm 1-4 .
 All items in current menu can be added with
-.Sq tour * .
+.Ic tour Cm * .
 Current tour can be listed with
-.Sq tour ls
+.Ic tour Cm ls
 and scrubbed with
-.Sq tour clear .
-Abbrev.
-.Ic t
-.It Ic up
+.Ic tour Cm clear .
+.It Ic up , Ic u
 Go up one directory in the path.
-Abbrev.
-.Ic u
-.It Ic veronica
+.It Ic v , veronica
 Submit a search query to the Veronica 2 search engine.
-Abbrev.
-.Ic v
 .El
 .Sh FILES
 .\" the longest path name appearing in the list
@@ -736,6 +404,11 @@ Start a tour through your favourite sites by putting
 commands in the RC file.
 .El
 .Sh EXAMPLES
+See the
+.Xr vf1-turorial 7
+for a comprehensive introduction to the work flow of
+.Nm
+.Pp
 Start
 .Nm :
 .Pp
@@ -751,15 +424,14 @@ Visit the zaibatsu:
 .Pp
 .Dl vf1 zaibatsu.circumlunar.space
 .Sh SEE ALSO
+.Xr vf1-tutorial 7
 .Bl -bullet
 .It
-.Ql mimetypes
-.Aq Lk https://docs.python.org/3.5/library/mimetypes.html
+.Lk https://docs.python.org/3.5/library/mimetypes.html mimetypes
 .It
-.Ql chardet
-.Aq Lk https://pypi.python.org/pypi/chardet
+.Lk https://pypi.python.org/pypi/chardet chardet
 .El
-.Sh CONFORMING TO
+.Sh STANDARDS
 .Nm
 is a gopher client conforming to RFC 1436
 .Aq Lk https://tools.ietf.org/html/rfc1436 .
