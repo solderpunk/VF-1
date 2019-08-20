@@ -17,9 +17,9 @@ is an interactive command line gopher client.
 It presents a prompt to the user, which can then enter commands to perform
 actions.
 .Pp
-You only need a small number of commands to get around, and most of
-them can be abbreviated to one or two chars, so with practice you can get
-around very quickly.
+Only a small number of commands are needed to get around, and most of
+them can be abbreviated to one or two chars, so with practice very quick
+navigation of gopherspace is possible.
 See the
 .Sx COMMANDS
 section for more details.
@@ -29,21 +29,20 @@ The options are as follows:
 .It Fl h , \-help
 Display a short help message and exit.
 .It Fl \-bookmarks
-Open your bookmarks.
+Immediately navigate to bookmarks upon starting.
 .It Fl \-debug
-Open with debug mode enabled.
+Start with debug mode enabled.
 .It Fl \-tls
-Open in TLS mode.
-That is, all the links you're following are expected to go to TLS enabled
-servers.
-This is the equivalent of using the
+Start in TLS mode.
+In this mode
+.Em all
+all servers are expected to be TLS enabled.
+This is equivalent to using the
 .Ic tls
 command to switch to TLS mode.
 .It Ar url ...
-The Gopher URLs to open.
-If you just supply a hostname, the standard port is going to be used.
-The standard port is 70.
-If you provide more than one URL, these are queued in a
+The Gopher URL(s) to open.
+If more than one URL is provided, these are queued in a
 .Ic tour .
 .El
 .Ss Concepts
@@ -55,36 +54,35 @@ works.
 .Nm
 always has in it's mind exactly one
 .Dq index ,
-i.e. a list of places in Gopherspace with numbers attached to them. By
-typing
+i.e. a list of places in Gopherspace with numbers attached to them.
+Typing
 .Ic 1
-and enter,
+and enter, or
 .Ic 2
-and enter, etc. you jump to that location in the active index.
+and enter, etc. will cause
+.Nm
+to jump to that location in the active index.
 .It
-Whenever you visit a gopher menu, the contents of that menu become the
+Whenever a gopher menu is visited, the contents of that menu become the
 active index, replacing whatever it used to be.
 .It
-When you do
+The results of the
 .Ic search
 or
 .Ic history
 or
 .Ic links ,
-the results of these commands overwrite your current index.
-If you want to get your index back to being the most recently visited gopher
-menu, you can use the
+commands overwrite the current index.
+The  index can be reset to the most recently visited gopher menu, with the
 .Ic ls
 command.
-Doing this means you lose your search results (your history doesn't go away,
-though).
 .It
 The
 .Ic search
 command runs on whatever the current index is.
 This might not be the contents of a gopher menu.
-You can search your history, and in fact you can even search the results of an
-earlier search to narrow things down!
+For example, the history can be searched. In fact, even the results of an
+earlier search can be searched again to narrow things down!
 .It
 In general,
 .Nm
@@ -95,15 +93,15 @@ The
 .Ic ls
 command always operates on the most recently visited gopher
 .Em menu ,
-even if you have visited some documents since then.
+even if non-menu items have been visited since then.
 Commands like
 .Ic fold ,
 .Ic less
 and
 .Ic save
 operate on the most recently visited
-.Em document ,
-even if you have visited some menus since then.
+.Em non-menu item,
+even if menus have been visited since then.
 Basically everything operates one the most recently seen thing of the
 appropriate type.
 .El
@@ -113,17 +111,17 @@ appropriate type.
 .Nm
 uses external programs as
 .Dq handlers
-to present gopherspace content to you.
-Even when you visit a plain text file with item type 0,
+to present different gopherspace content to the user.
+Even when visiting a plain text file with item type 0,
 .Nm
 spawns (by
 default) the unix command
 .Xr cat 1
-to display that file on your screen, rather than using a Python
+to display that file on the screen, rather than using a Python
 .Fn print
 call.
-You have full control over which external programs are used for different
-content, so you can customise your user experience.
+Users have full control over which external programs are used for different
+content, so the user experience can be customised to taste.
 .Pp
 Handlers are assigned on the basis of MIME types.
 The gopher protocol has no concept of MIME, so
@@ -149,8 +147,8 @@ extension of the last component of the selector, using the
 .Ql mimetypes
 module from the Python standard library.
 This usually results in a reliable identification assuming the file has an
-extension and the author of the gopher content is not actively trying to
-deceive you.
+extension and the author of the gopher content is not being deliberately
+deceptive.
 .Pp
 If the selector has no file extension, or the extension is not
 recognised by the
@@ -186,7 +184,7 @@ or maliciously configured gopher server.
 .Pp
 Once a MIME type has been identified for an item, an appropriate handler
 program will be used to handle the content.
-You can view a list of the current handler assignments at any time by running
+A list of the current handler assignments can be viewed at any time by running
 the
 .Ic handler
 command.
@@ -203,24 +201,25 @@ are:
 .It text/plain:         Ta cat %s
 .El
 .Pp
-You can also use the
+The
 .Ic handler
-command to change these handlers, or set handlers for new MIME types.
-For example, if you prefer using
+command can be used to change these handlers, or set handlers for new MIME
+types.
+For example, users who prefer
 .Xr w3m 1
 over
 .Xr lynx 1
-for handling HTML content, you could run:
+for handling HTML content could run:
 .Pp
 .Dl VF-1> handler text/html w3m -dump %s
 .Pp
-You can use the
+The
 .Ql *
 wildcard when specifying handler MIME types, such as
 .Ql image/*
 to use a single program to handle any kind of image.
 Handlers without wildcards take precedence over handlers with wildcards.
-In other words, if you specify, e.g. one handler for
+In other words, if one handler is specified for
 .Ql image/jpeg
 and a different handler for
 .Ql image/* ,
@@ -244,13 +243,13 @@ be decoded as UTF-8, one of two possible things will happen:
 .Pp
 If the
 .Ql chardet
-Python module is installed on your system,
+Python module is installed,
 .Nm
 will use it to attempt to
 automatically detect the encoding used and decode the text appropriately.
 Note that pip etc. will not install
 .Ql chardet
-for you when you install
+automatically when installing
 .Nm ,
 as
 .Nm
@@ -276,9 +275,9 @@ This encoding can be set as follows:
 The default fall back encoding is iso-8559-1, which is used by the
 popular gopher site
 .Lk floodgap.com .
-If you routinely visit gopher sites encoded with some other encoding, consider
-using an RC file (see below) to automatically set your alternative encoding at
-start up.
+Users who routinely visit gopher sites encoded with some other encoding may
+consider using an RC file (see below) to automatically set the alternative
+encoding at start up.
 .Sh COMMANDS
 .Bl -tag -width Ds
 .It Ic a , add
@@ -354,10 +353,9 @@ Submit a search query to the Veronica 2 search engine.
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
 .It Pa ~/.vf1-bookmarks.txt
-This file stores your bookmarks. Use
+This file stores gopher bookmarks, in a simple gophermap format.  Use
 .Ic add
-to add the current URL to your bookmarks. Feel free to edit the file
-and rearrange the bookmarks using a text editor. This files is a
+to add the current URL to bookmark list.
 simple gopher map.
 .It Pa ~/.config/vf1/vf1rc
 .It Pa ~/.config/.vf1rc
@@ -367,39 +365,39 @@ Upon startup,
 will search for a file with one of these names, a so-called RC file
 (see below). The names are listed above in order of preference and
 .Nm
-will stop after the first one it finds, e.g. if you have both a
+will stop after the first one it finds, e.g. if both
 .Pa ~/.config/vf1/vf1rc
 and a
 .Pa ~/.vf1rc
-then
+exist then then
 .Pa ~/.vf1rc
 will be ignored.
 .El
 .Ss RC FILE
 If such a file is found, each line of the file will be executed as a
 .Nm
-command before the prompt is displayed. This allows you to script
-certain commands that you want to be run every time you start
-.Nm .
-This lets you:
+command before the prompt is displayed. This allows users to script
+certain commands that should be run every time
+.Nm
+is started.  This permits:
 .Bl -bullet
 .It
-Permanently configure item type handlers by putting
+Permanently configuring item type handlers by putting
 .Ic handler
 commands in the RC file.
 .It
-Permanently configure any options, such as whether or not to use
-coloured output or your preferred non-UTF-8 encoding, by putting
+Permanently configuring the preferred non-UTF-8 encoding, or other
+options, by putting
 .Ic set
 commands in the RC file.
 .It
-Set a
+Setting a
 .Dq home page
 by putting a
 .Ic go
 command in the RC file.
 .It
-Start a tour through your favourite sites by putting
+Starting a tour through a list of favourite sites by putting
 .Ic tour
 commands in the RC file.
 .El
@@ -416,7 +414,7 @@ Start
 .Pp
 Start
 .Nm
-with your bookmarks:
+and immediately open to bookmark list:
 .Pp
 .Dl vf1 --bookmarks
 .Pp
