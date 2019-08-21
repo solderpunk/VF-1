@@ -157,8 +157,11 @@ saves the item at lookup index n with the specified filename.
 .It Ic / , se , search Ar pattern
 Search the lookup (case insensitive).
 .It Ic set Op Ar option Ar value
-Set the value of an option, or view its current value.
+Change the value of a setting, or view its current value.
 Shows all current value options if no arguments are given.
+See the
+.Sx SETTINGS
+section below for more details.
 .It Ic tls
 Toggle TLS mode on or off.  See the
 .Sx TLS MODE
@@ -379,6 +382,35 @@ command to enable TLS mode (aka "Battloid mode").
 When TLS mode is enabled, all gopher requests will be made over TLS, so most
 requests will fail when a connection to the server cannot be established.
 TLS mode must be explicitly deactivated to resume browsing unencrypted gopherspace.
+.Sh SETTINGS
+The following miscellaneous settings can be adjusted with the
+.lc set
+command.
+.Bl -tag -width Ds
+.It Ic color_menus
+If set to true, items in gopher menus will be color coded according to item type,
+using ANSI escape codes.
+Default value is false.
+.It Ic debug
+If set to true, detailed debugging information will be printed to stdout when
+commands are run.
+Default value is false.
+.It Ic encoding
+Fallback text encoding to use if received gopher content cannot be decoded as UTF-8.  See the
+.Sx TEXT ENCODING
+section for more details.
+Default value is iso-8859-1.
+.It Ic ipv6
+If set to true,
+.Nm
+will preferentially attempt to connect to gopher servers via IPv6 if a AAAA DNS record is found.  If the IPv6 connection fails,
+.Nm
+will automatically retry with IPv4.
+Default value is true.
+.It Ic timeout
+Time to wait, in seconds, when trying to connect to a gopher server before giving up.
+Default value is 10.
+.El
 .Sh FILES
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
