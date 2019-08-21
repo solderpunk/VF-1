@@ -45,6 +45,9 @@ The Gopher URL(s) to open.
 If more than one URL is provided, these are queued in a
 .Ic tour .
 .El
+.Pp
+.Sh COMMANDS
+.Pp
 .Ss Concepts
 These are some key concepts to understand how
 .Nm
@@ -106,7 +109,76 @@ Basically everything operates one the most recently seen thing of the
 appropriate type.
 .El
 .Pp
-.Ss Handlers
+.Ss Commands
+.Bl -tag -width Ds
+.It Ic a , add
+Add the current URL to the bookmarks menu.
+.It Ic b , back
+Go back to the last gopher menu.
+.It Ic bb , blackbox
+Display contents of flight recorder, showing statistics for the current gopher
+browsing session.
+.It Ic bm , book , bookmarks
+Show the current bookmarks menu.
+.It Ic f , fold
+Process the text of the most recently visited item with the
+.Xr fold 1
+command.
+.It Ic fo , forward
+Go forward to the next gopher item.
+.It Ic g , go Ar url | mark
+Go to a gopher URL or marked item.
+.It Ic handler Op Ar mimetype Ar program
+List or set handlers for different MIME types.
+.It Ic h , hist , history
+Display history.
+.It Ic l , less
+Process the text of the most recently visited item with the
+.Xr less 1
+command.
+.It Ic li , links
+Extract URLs from most recently visited item.
+.It Ic m , mark Ar mark
+Mark the current item with a single letter.
+This letter can then be passed to the
+.Ic go
+command to return to the current item later.
+.It Ic n , next
+Go to next item after current in index.
+.It Ic p , prev, previous
+Go to previous item before current in index.
+.It Ic q , quit
+Exit VF-1.
+.It Ic r , reload
+Reload the current URL.
+.It Ic s , save Op Ar filename
+Save an item to the filesystem.
+.Ic save Cm n Cm filename
+saves index item n to the specified filename.
+.Ic save Cm filename
+saves the last viewed item to the specified filename.
+.Ic save Cm n
+saves index item n to an automagic filename.
+.It Ic / , se , search Ar pattern
+Search index (case insensitive).
+.It Ic t , tour Op Ar item ...
+Add index items as way points on a tour - a FIFO queue of gopher items.
+Items can be added with
+.Ic tour Cm "1 2 3 4"
+or ranges like
+.Ic tour Cm 1-4 .
+All items in the index can be added with
+.Ic tour Cm * .
+The current tour queue can be listed with
+.Ic tour Cm ls
+and scrubbed with
+.Ic tour Cm clear .
+.It Ic up , Ic u
+Go up one directory in the path.
+.It Ic v , veronica
+Submit a search query to the Veronica 2 search engine.
+.El
+.Sh HANDLERS
 .Pp
 .Nm
 uses external programs as
@@ -229,7 +301,7 @@ handler will be used for JPEGs and the
 .Ql image/*
 handler will be used for all other images.
 .Pp
-.Ss Text encoding
+.Sh TEXT ENCODING
 .Pp
 .Nm
 attempts to decode the content received for any text-based item
@@ -278,75 +350,6 @@ popular gopher site
 Users who routinely visit gopher sites encoded with some other encoding may
 consider using an RC file (see below) to automatically set the alternative
 encoding at start up.
-.Sh COMMANDS
-.Bl -tag -width Ds
-.It Ic a , add
-Add the current URL to the bookmarks menu.
-.It Ic b , back
-Go back to the last gopher menu.
-.It Ic bb , blackbox
-Display contents of flight recorder, showing statistics for the current gopher
-browsing session.
-.It Ic bm , book , bookmarks
-Show the current bookmarks menu.
-.It Ic f , fold
-Process the text of the most recently visited item with the
-.Xr fold 1
-command.
-.It Ic fo , forward
-Go forward to the next gopher item.
-.It Ic g , go Ar url | mark
-Go to a gopher URL or marked item.
-.It Ic handler Op Ar mimetype Ar program
-List or set handlers for different MIME types.
-.It Ic h , hist , history
-Display history.
-.It Ic l , less
-Process the text of the most recently visited item with the
-.Xr less 1
-command.
-.It Ic li , links
-Extract URLs from most recently visited item.
-.It Ic m , mark Ar mark
-Mark the current item with a single letter.
-This letter can then be passed to the
-.Ic go
-command to return to the current item later.
-.It Ic n , next
-Go to next item after current in index.
-.It Ic p , prev, previous
-Go to previous item before current in index.
-.It Ic q , quit
-Exit VF-1.
-.It Ic r , reload
-Reload the current URL.
-.It Ic s , save Op Ar filename
-Save an item to the filesystem.
-.Ic save Cm n Cm filename
-saves index item n to the specified filename.
-.Ic save Cm filename
-saves the last viewed item to the specified filename.
-.Ic save Cm n
-saves index item n to an automagic filename.
-.It Ic / , se , search Ar pattern
-Search index (case insensitive).
-.It Ic t , tour Op Ar item ...
-Add index items as way points on a tour - a FIFO queue of gopher items.
-Items can be added with
-.Ic tour Cm "1 2 3 4"
-or ranges like
-.Ic tour Cm 1-4 .
-All items in the index can be added with
-.Ic tour Cm * .
-The current tour queue can be listed with
-.Ic tour Cm ls
-and scrubbed with
-.Ic tour Cm clear .
-.It Ic up , Ic u
-Go up one directory in the path.
-.It Ic v , veronica
-Submit a search query to the Veronica 2 search engine.
-.El
 .Sh FILES
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
