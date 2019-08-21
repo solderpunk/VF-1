@@ -74,8 +74,8 @@ _MIME_HANDLERS = {
     "audio/mpeg":           "mpg123 %s",
     "audio/ogg":            "ogg123 %s",
     "image/*":              "feh %s",
+    "text/*":               "cat %s",
     "text/html":            "lynx -dump -force_html %s",
-    "text/plain":           "cat %s",
 }
 
 # Item type formatting stuff
