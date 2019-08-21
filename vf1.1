@@ -209,7 +209,64 @@ Handlers are assigned on the basis of MIME types.
 The gopher protocol has no concept of MIME type, so
 .Nm
 assigns each item a MIME
-type as follows:
+type itself in the manner described in the section
+.Sx MIME type assignment
+below.
+.Pp
+A list of the current handler assignments can be viewed at any time by running
+the
+.Ic handler
+command.
+The default handlers that ship with
+.Nm
+are:
+.Bl -column -offset indent "application/pdf" "lynx -dump -force_html %s"
+.It Sy MIME type          Ta Sy handler
+.It application/pdf:    Ta xpdf %s
+.It audio/mpeg:         Ta mpg123 %s
+.It audio/ogg:          Ta ogg123 %s
+.It image/*:            Ta feh %s
+.It text/*:         	Ta cat %s
+.It text/html:          Ta lynx -dump -force_html %s
+.El
+.Pp
+The
+.Ic handler
+command can be used to change these handlers, or set handlers for new MIME
+types.
+For example, users who prefer
+.Xr w3m 1
+over
+.Xr lynx 1
+for handling HTML content could run:
+.Pp
+.Dl VF-1> handler text/html w3m -dump %s
+.Pp
+The specified handler will be run as a shell command, with the temporary file
+containing the content of the current gopher item replacing any occurences of
+%s.  Pipe syntax can be used to pass gopher content through multiple text
+filters to achieve the desired appearance.
+.Pp
+The
+.Ql *
+wildcard can be used when specifying handler MIME types, e.g.
+.Ql image/*
+allows using a single program to handle any kind of image.
+Handlers without wildcards take precedence over handlers with wildcards.
+In other words, if one handler is specified for
+.Ql image/jpeg
+and a different handler for
+.Ql image/* ,
+the
+.Ql image/jpeg
+handler will be used for JPEGs and the
+.Ql image/*
+handler will be used for all other images.
+.Pp
+.Ss MIME type assignment
+.Pp
+.Nm
+assigns MIME types to gopher items as follows:
 .Bl -bullet
 .It
 Item types 0 and 1 are assigned MIME type
@@ -263,54 +320,6 @@ or
 respectively.
 This should only happen in highly unusual circumstances and suggests a poorly
 or maliciously configured gopher server.
-.Pp
-Once a MIME type has been identified for an item, an appropriate handler
-program will be used to handle the content.
-A list of the current handler assignments can be viewed at any time by running
-the
-.Ic handler
-command.
-The default handlers that ship with
-.Nm
-are:
-.Bl -column -offset indent "application/pdf" "lynx -dump -force_html %s"
-.It Sy handler          Ta Sy program
-.It application/pdf:    Ta xpdf %s
-.It audio/mpeg:         Ta mpg123 %s
-.It audio/ogg:          Ta ogg123 %s
-.It image/*:            Ta feh %s
-.It text/*:         Ta cat %s
-.It text/html:          Ta lynx -dump -force_html %s
-.El
-.Pp
-The
-.Ic handler
-command can be used to change these handlers, or set handlers for new MIME
-types.
-For example, users who prefer
-.Xr w3m 1
-over
-.Xr lynx 1
-for handling HTML content could run:
-.Pp
-.Dl VF-1> handler text/html w3m -dump %s
-.Pp
-The
-.Ql *
-wildcard can be used when specifying handler MIME types, e.g.
-.Ql image/*
-allows using a single program to handle any kind of image.
-Handlers without wildcards take precedence over handlers with wildcards.
-In other words, if one handler is specified for
-.Ql image/jpeg
-and a different handler for
-.Ql image/* ,
-the
-.Ql image/jpeg
-handler will be used for JPEGs and the
-.Ql image/*
-handler will be used for all other images.
-.Pp
 .Sh TEXT ENCODING
 .Pp
 .Nm
