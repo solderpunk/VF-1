@@ -34,12 +34,9 @@ Immediately navigate to bookmarks upon starting.
 Start with debug mode enabled.
 .It Fl \-tls
 Start in TLS mode.
-In this mode
-.Em all
-all servers are expected to be TLS enabled.
-This is equivalent to using the
-.Ic tls
-command to switch to TLS mode.
+See the
+.Sx TLS MODE
+section for more details.
 .It Ar url ...
 The Gopher URL(s) to open.
 If more than one URL is provided, these are queued in a
@@ -163,7 +160,9 @@ Search the lookup (case insensitive).
 Set the value of an option, or view its current value.
 Shows all current value options if no arguments are given.
 .It Ic tls
-Toggle TLS mode on or off.
+Toggle TLS mode on or off.  See the
+.Sx TLS MODE
+section for more details.
 .It Ic t , tour Op Ar item ...
 Visit the next item in, or add an item to, the
 .Dq tour
@@ -369,6 +368,17 @@ popular gopher site
 Users who routinely visit gopher sites encoded with some other encoding may
 consider using an RC file (see below) to automatically set the alternative
 encoding at start up.
+.Sh TLS MODE
+.Nm
+supports TLS connections.
+This is an experimental feature, and TLS connections are not supported by the
+majority of gopher servers.
+As such, TLS support must be explicitly activatd by using the
+.lc tls
+command to enable TLS mode (aka "Battloid mode").
+When TLS mode is enabled, all gopher requests will be made over TLS, so most
+requests will fail when a connection to the server cannot be established.
+TLS mode must be explicitly deactivated to resume browsing unencrypted gopherspace.
 .Sh FILES
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
