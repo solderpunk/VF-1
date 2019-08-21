@@ -48,134 +48,144 @@ If more than one URL is provided, these are queued in a
 .Pp
 .Sh COMMANDS
 .Pp
-.Ss Concepts
-These are some key concepts to understand how
+All
 .Nm
-works.
-.Bl -bullet
-.It
+commands are listed below.
+Most commands operate on an implicit operand from the very limited internal state which
 .Nm
-always has in it's mind exactly one
-.Dq index ,
-i.e. a list of places in Gopherspace with numbers attached to them.
-Typing
-.Ic 1
-and enter, or
-.Ic 2
-and enter, etc. will cause
-.Nm
-to jump to that location in the index.
-.It
+maintains.
+.Pp
+This state includes the
+.Dq lookup,
+which is a list of items (locations) in Gopherspace with numeric indices
+attached.
+Indices begin from 1.
+Upon startup, the lookup is empty.
 Whenever a gopher menu is visited, the contents of that menu become the
-index, replacing whatever it used to be.
-.It
-The results of the
-.Ic search
+contents of the lookup, replacing any previous contents.  
+Some commands, such as
+.Ic search ,
+.Ic history ,
 or
-.Ic history
-or
-.Ic links ,
-commands overwrite the current index.
-The index can be reset to the most recently visited gopher menu, with the
+.Ic links
+overwrite the lookup with their results.
+At any time, the lookup can be reset to the contents of the most recently
+visited gopher menu with the
 .Ic ls
 command.
-.It
-The
-.Ic search
-command operates on the current index.
-This might or might not be the contents of a gopher menu.
-For example, the history can be searched. In fact, even the results of an
-earlier search can be searched again to narrow things down!
-.It
-In general,
-.Nm
-does not remember much.
-It always has some idea of the most recently visited gopher menu (i.e. itemtype
-1) and the most recently visited gopher document (i.e. any other itemtype).
-The
-.Ic ls
-command always operates on the most recently visited gopher
-.Em menu ,
-even if non-menu items have been visited since then.
-Commands like
-.Ic fold ,
-.Ic less
-and
-.Ic save
-operate on the most recently visited
-.Em non-menu item,
-even if menus have been visited since then.
-Basically everything operates one the most recently seen thing of the
-appropriate type.
-.El
 .Pp
-.Ss Commands
+In addition to the lookup,
+.Nm
+is aware of exactly one active item (the item the user is currently viewing).
+Usually, the active item is one of the items in the lookup, and if so
+.Nm
+knows its index.
+.Pp
+Most
+.Nm
+commands operate on either the lookup, or the active item.
+.Pp
+In addition to the commands listed below, users can enter a numeric index.
+.Nm
+will then navigate to the corresponding item in the lookup, and that item will
+become the active item.
+.Pp
 .Bl -tag -width Ds
 .It Ic a , add
-Add the current URL to the bookmarks menu.
+Add the URL of the current item to the bookmarks menu.
 .It Ic b , back
-Go back to the last gopher menu.
+Go back to the previous item in the history.
 .It Ic bb , blackbox
 Display contents of flight recorder, showing statistics for the current gopher
 browsing session.
 .It Ic bm , book , bookmarks
 Show the current bookmarks menu.
-.It Ic f , fold
-Process the text of the most recently visited item with the
-.Xr fold 1
+.It Ic cat
+Process the text of the current item with the
+.Xr cat 1
 command.
+.It Ic exit
+Exit VF-1.
+Go forward to the next item in the history.
+.It Ic f , fold
+Process the text of the current item with the
+.Xr fold 1
+command, wrapping lines at 70 characters.
 .It Ic fo , forward
-Go forward to the next gopher item.
+Go forward to the next item in the history.
 .It Ic g , go Ar url | mark
-Go to a gopher URL or marked item.
+Visit a gopher URL or marked item, making it the active item.
 .It Ic handler Op Ar mimetype Ar program
-List or set handlers for different MIME types.
+List or set handlers for different MIME types.  See
+.Sx HANDLERS
+section below for more details.
+.It Ic help Op Ar command
+Display help information for a command, or list all commands with help information available.
 .It Ic h , hist , history
-Display history.
+Display the history.
 .It Ic l , less
-Process the text of the most recently visited item with the
+Process the text of the current item with the
 .Xr less 1
 command.
 .It Ic li , links
-Extract URLs from most recently visited item.
-.It Ic m , mark Ar mark
+Extract URLs from the text of the current item, and populate the lookup with them.
+.It lc Is
+Set the lookup to the contents of the most recently visited gopher menu and then list the lookup's contents.
+.It Ic m , mark Op Ar mark
 Mark the current item with a single letter.
 This letter can then be passed to the
 .Ic go
 command to return to the current item later.
+Lists all defined marks when no argument is given.
 .It Ic n , next
-Go to next item after current in index.
+Go to the item which is after the current item in the lookup.
 .It Ic p , prev, previous
-Go to previous item before current in index.
+Go to the item which is before the current item in the lookup.
 .It Ic q , quit
 Exit VF-1.
 .It Ic r , reload
-Reload the current URL.
+Reload the current item.
+.It Ic root
+Visit the root gopher item of the server hosting the current item.
 .It Ic s , save Op Ar filename
 Save an item to the filesystem.
-.Ic save Cm n Cm filename
-saves index item n to the specified filename.
+.Ic save
+saves the current item with an automagic filename derived from its gopher selector.
 .Ic save Cm filename
-saves the last viewed item to the specified filename.
+saves the current item with the specified filename.
 .Ic save Cm n
-saves index item n to an automagic filename.
+saves the item at lookup index n with an automagic filename.
+.Ic save Cm n Cm filename
+saves the item at lookup index n with the specified filename.
 .It Ic / , se , search Ar pattern
-Search index (case insensitive).
+Search the lookup (case insensitive).
+.It Ic set Op Ar option Ar value
+Set the value of an option, or view its current value.
+Shows all current value options if no arguments are given.
+.It Ic tls
+Toggle TLS mode on or off.
 .It Ic t , tour Op Ar item ...
-Add index items as way points on a tour - a FIFO queue of gopher items.
-Items can be added with
-.Ic tour Cm "1 2 3 4"
-or ranges like
+Visit the next item in, or add an item to, the
+.Dq tour
+- a FIFO queue of gopher items.
+If no arguments are provided, the next item in the tour is visited.
+Items from the lookup can be added with a list of indices like
+.Ic tour Cm "1 2 3 4",
+or consecutive ranges like
 .Ic tour Cm 1-4 .
-All items in the index can be added with
+All items in the lookup can be added with
 .Ic tour Cm * .
+Items not in the lookup can be added by their URL with
+.Ic tour Ar url .
 The current tour queue can be listed with
 .Ic tour Cm ls
 and scrubbed with
 .Ic tour Cm clear .
 .It Ic up , Ic u
 Go up one directory in the path.
-.It Ic v , veronica
+.It Ic url
+Show the URL of the current item.
+.It Ic v , veronica Op Ar query
 Submit a search query to the Veronica 2 search engine.
 .El
 .Sh HANDLERS
