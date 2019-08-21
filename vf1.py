@@ -571,7 +571,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self.page_index = 0
         self.index_index = -1
 
-        cmd_str = _MIME_HANDLERS["text/plain"]
+        cmd_str = self._get_handler_cmd(index_gi)
         subprocess.call(cmd_str % self.idx_filename, shell=True)
 
     def _format_gopheritem(self, index, gi, url=False):
