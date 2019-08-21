@@ -14,7 +14,7 @@
 .Sh DESCRIPTION
 .Nm
 is an interactive command line gopher client.
-It presents a prompt to the user, which can then enter commands to perform
+It presents a prompt to the user, who can then enter commands to perform
 actions.
 .Pp
 Only a small number of commands are needed to get around, and most of
@@ -46,7 +46,7 @@ If more than one URL is provided, these are queued in a
 .Ic tour .
 .El
 .Ss Concepts
-Those are some key concepts to understand how
+These are some key concepts to understand how
 .Nm
 works.
 .Bl -bullet
@@ -61,10 +61,10 @@ and enter, or
 .Ic 2
 and enter, etc. will cause
 .Nm
-to jump to that location in the active index.
+to jump to that location in the index.
 .It
 Whenever a gopher menu is visited, the contents of that menu become the
-active index, replacing whatever it used to be.
+index, replacing whatever it used to be.
 .It
 The results of the
 .Ic search
@@ -73,14 +73,14 @@ or
 or
 .Ic links ,
 commands overwrite the current index.
-The  index can be reset to the most recently visited gopher menu, with the
+The index can be reset to the most recently visited gopher menu, with the
 .Ic ls
 command.
 .It
 The
 .Ic search
-command runs on whatever the current index is.
-This might not be the contents of a gopher menu.
+command operates on the current index.
+This might or might not be the contents of a gopher menu.
 For example, the history can be searched. In fact, even the results of an
 earlier search can be searched again to narrow things down!
 .It
@@ -114,7 +114,7 @@ uses external programs as
 to present different gopherspace content to the user.
 Even when visiting a plain text file with item type 0,
 .Nm
-spawns (by
+uses (by
 default) the unix command
 .Xr cat 1
 to display that file on the screen, rather than using a Python
@@ -124,7 +124,7 @@ Users have full control over which external programs are used for different
 content, so the user experience can be customised to taste.
 .Pp
 Handlers are assigned on the basis of MIME types.
-The gopher protocol has no concept of MIME, so
+The gopher protocol has no concept of MIME type, so
 .Nm
 assigns each item a MIME
 type as follows:
@@ -197,8 +197,8 @@ are:
 .It audio/mpeg:         Ta mpg123 %s
 .It audio/ogg:          Ta ogg123 %s
 .It image/*:            Ta feh %s
+.It text/*:         Ta cat %s
 .It text/html:          Ta lynx -dump -force_html %s
-.It text/plain:         Ta cat %s
 .El
 .Pp
 The
@@ -215,9 +215,9 @@ for handling HTML content could run:
 .Pp
 The
 .Ql *
-wildcard when specifying handler MIME types, such as
+wildcard can be used when specifying handler MIME types, e.g.
 .Ql image/*
-to use a single program to handle any kind of image.
+allows using a single program to handle any kind of image.
 Handlers without wildcards take precedence over handlers with wildcards.
 In other words, if one handler is specified for
 .Ql image/jpeg
@@ -312,7 +312,6 @@ Mark the current item with a single letter.
 This letter can then be passed to the
 .Ic go
 command to return to the current item later.
-Think of it like marks in vi.
 .It Ic n , next
 Go to next item after current in index.
 .It Ic p , prev, previous
@@ -324,23 +323,22 @@ Reload the current URL.
 .It Ic s , save Op Ar filename
 Save an item to the filesystem.
 .Ic save Cm n Cm filename
-saves menu item n to the specified filename.
+saves index item n to the specified filename.
 .Ic save Cm filename
 saves the last viewed item to the specified filename.
 .Ic save Cm n
-saves menu item n to an automagic filename.
+saves index item n to an automagic filename.
 .It Ic / , se , search Ar pattern
 Search index (case insensitive).
 .It Ic t , tour Op Ar item ...
-Add index items as way points on a tour, which is basically a FIFO
-queue of gopher items.
+Add index items as way points on a tour - a FIFO queue of gopher items.
 Items can be added with
 .Ic tour Cm "1 2 3 4"
 or ranges like
 .Ic tour Cm 1-4 .
-All items in current menu can be added with
+All items in the index can be added with
 .Ic tour Cm * .
-Current tour can be listed with
+The current tour queue can be listed with
 .Ic tour Cm ls
 and scrubbed with
 .Ic tour Cm clear .
@@ -353,10 +351,10 @@ Submit a search query to the Veronica 2 search engine.
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
 .It Pa ~/.vf1-bookmarks.txt
-This file stores gopher bookmarks, in a simple gophermap format.  Use
+This file stores gopher bookmarks, in a simple gophermap format (without hosts or ports).
+Use
 .Ic add
-to add the current URL to bookmark list.
-simple gopher map.
+to add the current URL to the bookmark list.
 .It Pa ~/.config/vf1/vf1rc
 .It Pa ~/.config/.vf1rc
 .It Pa ~/.vf1rc
@@ -374,12 +372,12 @@ exist then then
 will be ignored.
 .El
 .Ss RC FILE
-If such a file is found, each line of the file will be executed as a
+If an RC file is found, each line of the file will be executed as a
 .Nm
 command before the prompt is displayed. This allows users to script
 certain commands that should be run every time
 .Nm
-is started.  This permits:
+is started.  This permits, for example:
 .Bl -bullet
 .It
 Permanently configuring item type handlers by putting
