@@ -385,7 +385,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             else:
                 cmd_str = self._get_handler_cmd(gi)
                 try:
-                    subprocess.call(shlex.split(cmd_str % tmpf.name))
+                    subprocess.call(cmd_str % tmpf.name, shell=True)
                 except FileNotFoundError:
                     print("Handler program %s not found!" % shlex.split(cmd_str)[0])
                     print("You can use the ! command to specify another handler program or pipeline.")
@@ -572,7 +572,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self.index_index = -1
 
         cmd_str = _MIME_HANDLERS["text/plain"]
-        subprocess.call(shlex.split(cmd_str % self.idx_filename))
+        subprocess.call(cmd_str % self.idx_filename, shell=True)
 
     def _format_gopheritem(self, index, gi, url=False):
         line = "[%d] " % index
