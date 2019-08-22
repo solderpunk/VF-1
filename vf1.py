@@ -776,10 +776,10 @@ enable automatic encoding detection.""")
     @needs_gi
     def do_up(self, *args):
         """Go up one directory in the path."""
-        gi = self.gi
-        pathbits = os.path.split(self.gi.path)
-        new_path = os.path.join(*pathbits[0:-1])
-        new_gi = GopherItem(gi.host, gi.port, new_path, "1", gi.name, gi.tls)
+        new_path, removed = os.path.split(self.gi.path)
+        if not removed:
+            new_path, removed = os.path.split(new_path)
+        new_gi = self.gi._replace(path=new_path, itemtype="1")
         self._go_to_gi(new_gi)
 
     def do_back(self, *args):
