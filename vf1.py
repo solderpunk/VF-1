@@ -230,7 +230,7 @@ class GopherClient(cmd.Cmd):
         self.gi = None
         self.history = []
         self.hist_index = 0
-        self.idx_filename = ""
+        self.menu_filename = ""
         self.menu = []
         self.menu_index = -1
         self.lookup = self.menu
@@ -311,6 +311,8 @@ class GopherClient(cmd.Cmd):
                 address, f = self._send_request(gi)
             # Read whole response
             response = f.read()
+            f.close()
+
         # Catch network errors which may be recoverable if a redundant
         # mirror is specified
         except (socket.gaierror, ConnectionRefusedError,
@@ -357,6 +359,10 @@ try again.  Otherwise, install the 'chardet' library for Python 3 to
 enable automatic encoding detection.""")
                 return
 
+        # Render gopher menus
+        if gi.itemtype in ("1", "7"):
+            response = self._render_menu(response, gi)
+
         # Save the result in a temporary file
         ## Delete old file
         if self.tmp_filename:
@@ -377,19 +383,12 @@ enable automatic encoding detection.""")
 
         # Pass file to handler, unless we were asked not to
         if handle:
-            # Process that file handler depending upon itemtype
-            if gi.itemtype in ("1", "7"):
-                f = io.StringIO()
-                f.write(response)
-                f.seek(0)
-                self._handle_menu(f, gi)
-            else:
-                cmd_str = self._get_handler_cmd(gi)
-                try:
-                    subprocess.call(cmd_str % tmpf.name, shell=True)
-                except FileNotFoundError:
-                    print("Handler program %s not found!" % shlex.split(cmd_str)[0])
-                    print("You can use the ! command to specify another handler program or pipeline.")
+            cmd_str = self._get_handler_cmd(gi)
+            try:
+                subprocess.call(cmd_str % tmpf.name, shell=True)
+            except FileNotFoundError:
+                print("Handler program %s not found!" % shlex.split(cmd_str)[0])
+                print("You can use the ! command to specify another handler program or pipeline.")
 
         # Update state
         self.gi = gi
@@ -531,22 +530,27 @@ enable automatic encoding detection.""")
             text += CRLF
         return text
 
-    def _handle_menu(self, f, menu_gi):
+    def _render_menu(self, response, menu_gi):
         self.menu = []
-        if self.idx_filename:
-            os.unlink(self.idx_filename)
+        if self.menu_filename:
+            os.unlink(self.menu_filename)
         tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
-        self.idx_filename = tmpf.name
-        for line in f:
+        self.menu_filename = tmpf.name
+        response = io.StringIO(response)
+        rendered = []
+        for line in response.readlines():
             if line.startswith("3"):
                 print("Error message from server:")
                 print(line[1:].split("\t")[0])
                 tmpf.close()
-                os.unlink(self.idx_filename)
-                self.idx_filename = ""
-                return
-            elif line.startswith("i"):
-                tmpf.write(line[1:].split("\t")[0] + "\n")
+                os.unlink(self.menu_filename)
+                self.menu_filename = ""
+                return ""
+            else:
+                tmpf.write(line)
+
+            if line.startswith("i"):
+                rendered.append(line[1:].split("\t")[0] + "\n")
             else:
                 try:
                     gi = gopheritem_from_line(line,
@@ -561,15 +565,13 @@ enable automatic encoding detection.""")
                     self._register_redundant_server(gi)
                     continue
                 self.menu.append(gi)
-                tmpf.write(self._format_gopheritem(len(self.menu), gi) + "\n")
-        tmpf.close()
+                rendered.append(self._format_gopheritem(len(self.menu), gi) + "\n")
 
         self.lookup = self.menu
         self.page_index = 0
         self.menu_index = -1
 
-        cmd_str = self._get_handler_cmd(menu_gi)
-        subprocess.call(cmd_str % self.idx_filename, shell=True)
+        return "".join(rendered)
 
     def _format_gopheritem(self, index, gi, url=False):
         line = "[%d] " % index
@@ -650,9 +652,6 @@ enable automatic encoding detection.""")
             self.prompt = "\x1b[38;5;196m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
         else:
             self.prompt = "\x1b[38;5;202m" + "VF-1" + "\x1b[38;5;255m" + "> " + "\x1b[0m"
-
-    def _get_active_tmpfile(self):
-        return self.idx_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
 
     def _debug(self, debug_text):
         if not self.options["debug"]:
@@ -920,26 +919,26 @@ Use 'ls -l' to see URLs."""
     @needs_gi
     def do_cat(self, *args):
         """Run most recently visited item through "cat" command."""
-        subprocess.call(shlex.split("cat %s" % self._get_active_tmpfile()))
+        subprocess.call(shlex.split("cat %s" % self.tmp_filename))
 
     @needs_gi
     def do_less(self, *args):
         """Run most recently visited item through "less" command."""
         cmd_str = self._get_handler_cmd(self.gi)
-        cmd_str = cmd_str % self._get_active_tmpfile()
+        cmd_str = cmd_str % self.tmp_filename
         subprocess.call("%s | less -R" % cmd_str, shell=True)
 
     @needs_gi
     def do_fold(self, *args):
         """Run most recently visited item through "fold" command."""
         cmd_str = self._get_handler_cmd(self.gi)
-        cmd_str = cmd_str % self._get_active_tmpfile()
+        cmd_str = cmd_str % self.tmp_filename
         subprocess.call("%s | fold -w 70 -s" % cmd_str, shell=True)
 
     @needs_gi
     def do_shell(self, line):
         """'cat' most recently visited item through a shell pipeline."""
-        subprocess.call(("cat %s |" % self._get_active_tmpfile()) + line, shell=True)
+        subprocess.call(("cat %s |" % self.tmp_filename) + line, shell=True)
 
     @needs_gi
     def do_save(self, line):
@@ -1023,10 +1022,9 @@ Use 'ls -l' to see URLs."""
         if os.path.exists(filename):
             print("File %s already exists!" % filename)
         else:
-            # Don't use _get_active_tmpfile() here, because we want to save the
-            # "source code" of menus, not the rendered view - this way VF-1
-            # can navigate to it later.
-            shutil.copyfile(self.tmp_filename, filename)
+            # Save the "source code" of menus, not the rendered view
+            src_file = self.menu_filename if self.gi.itemtype in ("1", "7") else self.tmp_filename
+            shutil.copyfile(src_file, filename)
             print("Saved to %s" % filename)
 
         # Restore gi if necessary
@@ -1132,8 +1130,8 @@ current gopher browsing session."""
         # Clean up after ourself
         if self.tmp_filename:
             os.unlink(self.tmp_filename)
-        if self.idx_filename:
-            os.unlink(self.idx_filename)
+        if self.menu_filename:
+            os.unlink(self.menu_filename)
         print()
         print("Thank you for flying VF-1!")
         sys.exit()
