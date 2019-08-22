@@ -231,9 +231,9 @@ class GopherClient(cmd.Cmd):
         self.history = []
         self.hist_index = 0
         self.idx_filename = ""
-        self.index = []
-        self.index_index = -1
-        self.lookup = self.index
+        self.menu = []
+        self.menu_index = -1
+        self.lookup = self.menu
         self.marks = {}
         self.mirrors = {}
         self.page_index = 0
@@ -381,7 +381,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             # Process that file handler depending upon itemtype
             if gi.itemtype in ("1", "7"):
                 f.seek(0)
-                self._handle_index(f, gi)
+                self._handle_menu(f, gi)
             else:
                 cmd_str = self._get_handler_cmd(gi)
                 try:
@@ -534,8 +534,8 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         new_f.seek(0)
         return new_f
 
-    def _handle_index(self, f, index_gi):
-        self.index = []
+    def _handle_menu(self, f, menu_gi):
+        self.menu = []
         if self.idx_filename:
             os.unlink(self.idx_filename)
         tmpf = tempfile.NamedTemporaryFile("w", encoding="UTF-8", delete=False)
@@ -553,8 +553,8 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             else:
                 try:
                     gi = gopheritem_from_line(line,
-                            index_gi.host if self.tls else None,
-                            index_gi.port if self.tls else None)
+                            menu_gi.host if self.tls else None,
+                            menu_gi.port if self.tls else None)
                 except:
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
@@ -563,15 +563,15 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 if gi.itemtype == "+":
                     self._register_redundant_server(gi)
                     continue
-                self.index.append(gi)
-                tmpf.write(self._format_gopheritem(len(self.index), gi) + "\n")
+                self.menu.append(gi)
+                tmpf.write(self._format_gopheritem(len(self.menu), gi) + "\n")
         tmpf.close()
 
-        self.lookup = self.index
+        self.lookup = self.menu
         self.page_index = 0
-        self.index_index = -1
+        self.menu_index = -1
 
-        cmd_str = self._get_handler_cmd(index_gi)
+        cmd_str = self._get_handler_cmd(menu_gi)
         subprocess.call(cmd_str % self.idx_filename, shell=True)
 
     def _format_gopheritem(self, index, gi, url=False):
@@ -596,7 +596,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
 
     def _register_redundant_server(self, gi):
         # This mirrors the last non-mirror item
-        target = self.index[-1]
+        target = self.menu[-1]
         target = (target.host, target.port, target.path)
         if target not in self.mirrors:
             self.mirrors[target] = []
@@ -693,7 +693,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             print ("Index too high!")
             return
 
-        self.index_index = n
+        self.menu_index = n
         self._go_to_gi(gi)
 
     ### Settings
@@ -804,12 +804,12 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
 
     def do_next(self, *args):
         """Go to next item after current in index."""
-        return self.onecmd(str(self.index_index+1))
+        return self.onecmd(str(self.menu_index+1))
 
     def do_previous(self, *args):
         """Go to previous item before current in index."""
-        self.lookup = self.index
-        return self.onecmd(str(self.index_index-1))
+        self.lookup = self.menu
+        return self.onecmd(str(self.menu_index-1))
 
     @needs_gi
     def do_root(self, *args):
@@ -890,7 +890,7 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
     def do_ls(self, line):
         """List contents of current index.
 Use 'ls -l' to see URLs."""
-        self.lookup = self.index
+        self.lookup = self.menu
         self._show_lookup(url = "-l" in line)
         self.page_index = 0
 
