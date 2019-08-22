@@ -140,7 +140,7 @@ def url_to_gopheritem(url, tls=False):
         # Use item type 1 for top-level selector
         itemtype = 1
     return GopherItem(u.hostname, u.port or 70, path,
-                      str(itemtype), None,
+                      str(itemtype), "",
                       True if u.scheme == "gophers" else False)
 
 def fix_ipv6_url(url):
