@@ -309,19 +309,8 @@ class GopherClient(cmd.Cmd):
                 address, f = self._send_request(gi, query=query_str)
             else:
                 address, f = self._send_request(gi)
-            # Attempt to decode something that is supposed to be text
-            # (which involves reading the entire file over the network
-            # first)
-            if gi.itemtype in ("0", "1", "7", "h"):
-                try:
-                    f = self._decode_text(f)
-                except UnicodeError:
-                    print("""ERROR: Unknown text encoding!
-If you know the correct encoding, use e.g. 'set encoding koi8-r' and
-try again.  Otherwise, install the 'chardet' library for Python 3 to
-enable automatic encoding detection.""")
-                    return
-
+            # Read whole response
+            response = f.read()
         # Catch network errors which may be recoverable if a redundant
         # mirror is specified
         except (socket.gaierror, ConnectionRefusedError,
@@ -349,7 +338,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 print("Trying redundant mirror %s..." % gopheritem_to_url(new_gi))
                 self._go_to_gi(new_gi)
             return
-
         # Catch non-recoverable errors
         except Exception as err:
             print("ERROR: " + str(err))
@@ -357,6 +345,17 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 print(gopheritem_to_url(gi) + " is probably not encrypted.")
                 print("Use 'tls' to disable encryption.")
             return
+
+        # Attempt to decode something that is supposed to be text
+        if gi.itemtype in ("0", "1", "7", "h"):
+            try:
+                response = self._decode_text(response)
+            except UnicodeError:
+                print("""ERROR: Unknown text encoding!
+If you know the correct encoding, use e.g. 'set encoding koi8-r' and
+try again.  Otherwise, install the 'chardet' library for Python 3 to
+enable automatic encoding detection.""")
+                return
 
         # Save the result in a temporary file
         ## Delete old file
@@ -371,7 +370,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
             encoding = None
         ## Write
         tmpf = tempfile.NamedTemporaryFile(mode, encoding=encoding, delete=False)
-        size = tmpf.write(f.read())
+        size = tmpf.write(response)
         tmpf.close()
         self.tmp_filename = tmpf.name
         self._debug("Wrote %d byte response to %s." % (size, self.tmp_filename))
@@ -380,6 +379,8 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         if handle:
             # Process that file handler depending upon itemtype
             if gi.itemtype in ("1", "7"):
+                f = io.StringIO()
+                f.write(response)
                 f.seek(0)
                 self._handle_menu(f, gi)
             else:
@@ -498,7 +499,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         self._debug("Using handler: %s" % cmd_str)
         return cmd_str
 
-    def _decode_text(self, f):
+    def _decode_text(self, raw_bytes):
         # Attempt to decode some bytes into a Unicode string.
         # First of all, try UTF-8 as the default.
         # If this fails, attempt to autodetect the encoding if chardet
@@ -507,7 +508,6 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
         # the user-specified alternate encoding.
         # If none of this works, this will raise UnicodeError and it's
         # up to the caller to handle it gracefully.
-        raw_bytes = f.read()
         # Try UTF-8 first:
         try:
             text = raw_bytes.decode("UTF-8")
@@ -529,10 +529,7 @@ Slow internet connection?  Use 'set timeout' to be more patient.""")
                 text = raw_bytes.decode(self.options["encoding"])
         if not text.endswith("\n"):
             text += CRLF
-        new_f = io.StringIO()
-        new_f.write(text)
-        new_f.seek(0)
-        return new_f
+        return text
 
     def _handle_menu(self, f, menu_gi):
         self.menu = []
