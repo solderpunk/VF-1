@@ -406,8 +406,7 @@ enable automatic encoding detection.""")
         Returns the resolved address and binary file with the reply."""
         # Add query to selector
         if query:
-            gi = GopherItem(gi.host, gi.port, gi.path + "\t" + query,
-                    gi.itemtype, gi.name, gi.tls)
+            gi = gi._replace(path=gi.path + "\t" + query)
         # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
         if ":" in gi.host:
             # This is likely a literal IPv6 address, so we can *only* ask for
@@ -810,8 +809,7 @@ enable automatic encoding detection.""")
     @needs_gi
     def do_root(self, *args):
         """Go to root selector of the server hosting current item."""
-        gi = GopherItem(self.gi.host, self.gi.port, "", "1",
-                        "Root of %s" % self.gi.host, self.tls)
+        gi = self.gi._replace(path="", itemtype="1", name=self.gi.host)
         self._go_to_gi(gi)
 
     def do_tour(self, line):
