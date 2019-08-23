@@ -209,7 +209,15 @@ def gopheritem_to_line(gi, name=""):
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
-    return "." in word and word.startswith(("gopher://", "gophers://"))
+    return "." in word and ("gopher://" in word or "gophers://" in word)
+
+def extract_url(word):
+    print(word)
+    for start, end in (("<",">"), ('"','"'), ("(",")")):
+        print(word[0], start)
+        if word[0] == start and end in word:
+            return word[1:word.rfind(end)]
+    return word
 
 # Decorators
 def needs_gi(inner):
@@ -1044,7 +1052,9 @@ Use 'ls -l' to see URLs."""
         with open(self.tmp_filename, "r") as fp:
             for line in fp:
                 words = line.strip().split()
-                links.extend([url_to_gopheritem(w) for w in words if looks_like_url(w)])
+                words_containing_urls = (w for w in words if looks_like_url(w))
+                urls = (extract_url(w) for w in words_containing_urls)
+                links.extend([url_to_gopheritem(u) for u in urls])
         self.lookup = links
         self._show_lookup()
 
