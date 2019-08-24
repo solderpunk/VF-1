@@ -215,7 +215,7 @@ def extract_url(word):
     # Given a word that probably contains a URL, extract that URL from
     # with sensible surrounding punctuation.
     print(word)
-    for start, end in (("<",">"), ('[',']'), ("(",")"), ("'","'"), ('"','"'):
+    for start, end in (("<",">"), ('[',']'), ("(",")"), ("'","'"), ('"','"')):
         print(word[0], start)
         if word[0] == start and end in word:
             return word[1:word.rfind(end)]
@@ -276,7 +276,7 @@ class GopherClient(cmd.Cmd):
             "reset_connections": 0,
             "timeouts": 0,
         }
-        self.itemtype_counts = { itemtype: 0 for itemtype in "0 1 7 8 9 h g s I T".split()}
+        self.itemtype_counts = { itemtype: 0 for itemtype in "0 1 7 8 9 h g s I T p".split()}
 
     def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
         """This method might be considered "the heart of VF-1".
