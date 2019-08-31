@@ -276,7 +276,7 @@ class GopherClient(cmd.Cmd):
             "reset_connections": 0,
             "timeouts": 0,
         }
-        self.itemtype_counts = { itemtype: 0 for itemtype in "0 1 7 8 9 h g s I T p".split()}
+        self.itemtype_counts = { }
 
     def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
         """This method might be considered "the heart of VF-1".
@@ -643,7 +643,8 @@ enable automatic encoding detection.""")
         self.hist_index = len(self.history) - 1
 
     def _log_visit(self, gi, address, size):
-        self.itemtype_counts[gi.itemtype] += 1
+        self.itemtype_counts[gi.itemtype] = (
+            self.itemtype_counts.get(gi.itemtype, 0) + 1)
         if not address:
             return
         self.log["requests"] += 1
@@ -1121,7 +1122,7 @@ current gopher browsing session."""
         lines.append(("   IPv4 requests:", self.log["ipv4_requests"]))
         lines.append(("   IPv6 requests:", self.log["ipv6_requests"]))
         lines.append(("   TLS-secured requests:", self.log["tls_requests"]))
-        for itemtype in "0 1 7 8 9 h g s I T".split():
+        for itemtype in sorted(self.itemtype_counts.keys()):
             lines.append(("   Itemtype %s:" % itemtype, self.itemtype_counts[itemtype]))
         lines.append(("Bytes received:", self.log["bytes_recvd"]))
         lines.append(("   IPv4 bytes:", self.log["ipv4_bytes_recvd"]))
