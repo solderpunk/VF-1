@@ -48,7 +48,8 @@ If more than one URL is provided, these are queued in a
 All
 .Nm
 commands are listed below.
-Most commands operate on an implicit operand from the very limited internal state which
+Most commands operate on an implicit operand from the very limited internal
+state which
 .Nm
 maintains.
 .Pp
@@ -59,7 +60,7 @@ attached.
 Indices begin from 1.
 Upon startup, the lookup is empty.
 Whenever a gopher menu is visited, the contents of that menu become the
-contents of the lookup, replacing any previous contents.  
+contents of the lookup, replacing any previous contents.
 Some commands, such as
 .Ic search ,
 .Ic history ,
@@ -113,11 +114,13 @@ Go forward to the next item in the history.
 .It Ic g , go Ar url | mark
 Visit a gopher URL or marked item, making it the active item.
 .It Ic handler Op Ar mimetype Ar program
-List or set handlers for different MIME types.  See
+List or set handlers for different MIME types.
+See
 .Sx HANDLERS
 section below for more details.
 .It Ic help Op Ar command
-Display help information for a command, or list all commands with help information available.
+Display help information for a command, or list all commands with help
+information available.
 .It Ic h , hist , history
 Display the history.
 .It Ic l , less
@@ -125,10 +128,13 @@ Process the text of the current item with the
 .Xr less 1
 command.
 .It Ic li , links
-Extract URLs from the text of the current item, and populate the lookup with them.
-.It lc Is Op -l
-Set the lookup to the contents of the most recently visited gopher menu and then list the lookup's contents.  If invoked as
-.lc ls -l
+Extract URLs from the text of the current item, and populate the lookup with
+them.
+.It Ic ls Op -l
+Set the lookup to the contents of the most recently visited gopher menu and
+then list the lookup's contents.
+If invoked as
+.Ic ls -l
 the listing will include the URL of each menu item.
 .It Ic m , mark Op Ar mark
 Mark the current item with a single letter.
@@ -149,7 +155,8 @@ Visit the root gopher item of the server hosting the current item.
 .It Ic s , save Op Ar filename
 Save an item to the filesystem.
 .Ic save
-saves the current item with an automagic filename derived from its gopher selector.
+saves the current item with an automagic filename derived from its gopher
+selector.
 .Ic save Cm filename
 saves the current item with the specified filename.
 .Ic save Cm n
@@ -165,7 +172,8 @@ See the
 .Sx SETTINGS
 section below for more details.
 .It Ic tls
-Toggle TLS mode on or off.  See the
+Toggle TLS mode on or off.
+See the
 .Sx TLS MODE
 section for more details.
 .It Ic t , tour Op Ar item ...
@@ -248,7 +256,8 @@ for handling HTML content could run:
 .Pp
 The specified handler will be run as a shell command, with the temporary file
 containing the content of the current gopher item replacing any occurences of
-%s.  Pipe syntax can be used to pass gopher content through multiple text
+%s.
+Pipe syntax can be used to pass gopher content through multiple text
 filters to achieve the desired appearance.
 .Pp
 The
@@ -385,41 +394,48 @@ When TLS mode is enabled,
 .Em all
 gopher requests will be made over TLS, so most
 requests will fail when a connection to the server cannot be established.
-TLS mode must be explicitly deactivated to resume browsing unencrypted gopherspace.
+TLS mode must be explicitly deactivated to resume browsing unencrypted
+gopherspace.
 .Sh SETTINGS
 The following miscellaneous settings can be adjusted with the
 .lc set
 command.
 .Bl -tag -width Ds
 .It Ic color_menus
-If set to true, items in gopher menus will be color coded according to item type,
-using ANSI escape codes.
+If set to true, items in gopher menus will be color coded according to item
+type, using ANSI escape codes.
 Default value is false.
 .It Ic debug
 If set to true, detailed debugging information will be printed to stdout when
 commands are run.
 Default value is false.
 .It Ic encoding
-Fallback text encoding to use if received gopher content cannot be decoded as UTF-8.  See the
+Fallback text encoding to use if received gopher content cannot be decoded as
+UTF-8.
+See the
 .Sx TEXT ENCODING
 section for more details.
 Default value is iso-8859-1.
 .It Ic ipv6
 If set to true,
 .Nm
-will preferentially attempt to connect to gopher servers via IPv6 if a AAAA DNS record is found.  If the IPv6 connection fails,
+will preferentially attempt to connect to gopher servers via IPv6 if a AAAA DNS
+record is found.
+If the IPv6 connection fails,
 .Nm
 will automatically retry with IPv4.
 Default value is true.
 .It Ic timeout
-Time to wait, in seconds, when trying to connect to a gopher server before giving up.
+Time to wait, in seconds, when trying to connect to a gopher server before
+giving up.
 Default value is 10.
 .El
 .Sh FILES
 .\" the longest path name appearing in the list
 .Bl -tag -width ~/.vf1-bookmarks.txt -compact
 .It Pa ~/.vf1-bookmarks.txt
-This file stores gopher bookmarks, in a simple gophermap format (without hosts or ports).
+This file stores gopher bookmarks, in a simple gophermap format (without hosts
+or ports).
 Use
 .Ic add
 to add the current URL to the bookmark list.
@@ -429,7 +445,7 @@ to add the current URL to the bookmark list.
 Upon startup,
 .Nm
 will search for a file with one of these names, a so-called RC file
-(see below). The names are listed above in order of preference and
+(see below).The names are listed above in order of preference and
 .Nm
 will stop after the first one it finds, e.g. if both
 .Pa ~/.config/vf1/vf1rc
@@ -442,10 +458,11 @@ will be ignored.
 .Ss RC FILE
 If an RC file is found, each line of the file will be executed as a
 .Nm
-command before the prompt is displayed. This allows users to script
+command before the prompt is displayed.This allows users to script
 certain commands that should be run every time
 .Nm
-is started.  This permits, for example:
+is started.
+This permits, for example:
 .Bl -bullet
 .It
 Permanently configuring item type handlers by putting
