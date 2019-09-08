@@ -118,9 +118,9 @@ CRLF = '\r\n'
 
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
-        ("host", "port", "path", "itemtype", "name", "tls"))
+        ("host", "port", "path", "itemtype", "name"))
 
-def url_to_gopheritem(url, tls=False):
+def url_to_gopheritem(url):
     # urllibparse.urlparse can handle IPv6 addresses, but only if they
     # are formatted very carefully, in a way that users almost
     # certainly won't expect.  So, catch them early and try to fix
@@ -129,7 +129,7 @@ def url_to_gopheritem(url, tls=False):
         url = fix_ipv6_url(url)
     # Prepend a gopher schema if none given
     if "://" not in url:
-        url = ("gophers://" if tls else "gopher://") + url
+        url = "gopher://" + url
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
@@ -140,8 +140,7 @@ def url_to_gopheritem(url, tls=False):
         # Use item type 1 for top-level selector
         itemtype = 1
     return GopherItem(u.hostname, u.port or 70, path,
-                      str(itemtype), "",
-                      True if u.scheme == "gophers" else False)
+                      str(itemtype), "")
 
 def fix_ipv6_url(url):
     # If there's a pair of []s in there, it's probably fine as is.
@@ -165,8 +164,7 @@ def fix_ipv6_url(url):
 
 def gopheritem_to_url(gi):
     if gi and gi.host:
-        return ("gopher%s://%s:%d/%s%s" % (
-            "s" if gi.tls else "",
+        return ("gopher://%s:%d/%s%s" % (
             gi.host, int(gi.port),
             gi.itemtype, gi.path))
     elif gi:
@@ -174,7 +172,7 @@ def gopheritem_to_url(gi):
     else:
         return ""
 
-def gopheritem_from_line(line, tls_host, tls_port):
+def gopheritem_from_line(line):
     # Split on tabs.  Strip final element after splitting,
     # since if we split first we loose empty elements.
     parts = line.split("\t")
@@ -192,19 +190,13 @@ def gopheritem_from_line(line, tls_host, tls_port):
     if itemtype == "h" and path.startswith("URL:gopher"):
         url = path[4:]
         return url_to_gopheritem(url)
-    return GopherItem(host, port, path, itemtype, name,
-            host == tls_host and port == tls_port)
+    return GopherItem(host, port, path, itemtype, name)
 
 def gopheritem_to_line(gi, name=""):
     name = ((name or gi.name) or gopheritem_to_url(gi))
     # Prepend itemtype to name
-    if gi.tls:
-        # Use h-type URL: for secure links
-        name = "h" + name
-        path = "URL:" + gopheritem_to_url(gi)
-    else:
-        name = str(gi.itemtype) + name
-        path = gi.path
+    name = str(gi.itemtype) + name
+    path = gi.path
     return "\t".join((name, path, gi.host or "", str(gi.port))) + "\n"
 
 # Cheap and cheerful URL detector
@@ -299,15 +291,6 @@ class GopherClient(cmd.Cmd):
             return
 
         # From here on in, it's gopher only
-
-        # Enforce "no surprises" policy re: crypto
-        if self.tls and not gi.tls:
-            print("Cannot enter demilitarized zone in battloid!")
-            print("Use 'tls' to disable battloid mode before leaving encrypted gopherspace.")
-            return
-        elif not self.tls and gi.tls:
-            self._set_tls(True)
-            print("Enabling battloid mode to connect to encrypted server.")
 
         # Do everything which touches the network in one block,
         # so we only need to catch exceptions once
@@ -565,9 +548,7 @@ enable automatic encoding detection.""")
                 rendered.append(line[1:].split("\t")[0] + "\n")
             else:
                 try:
-                    gi = gopheritem_from_line(line,
-                            menu_gi.host if self.tls else None,
-                            menu_gi.port if self.tls else None)
+                    gi = gopheritem_from_line(line)
                 except:
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
@@ -627,7 +608,7 @@ enable automatic encoding detection.""")
         mirror_host, mirror_port, mirror_path = random.sample(mirrors, 1)[0]
         new_gi = GopherItem(mirror_host, mirror_port,
                 mirror_path + "/" + gi.path[len(path_prefix):],
-                gi.itemtype, gi.name, gi.tls)
+                gi.itemtype, gi.name)
         return new_gi
 
     def _show_lookup(self, offset=0, end=None, url=False):
@@ -773,12 +754,12 @@ enable automatic encoding detection.""")
         # or a local file
         elif os.path.exists(os.path.expanduser(line)):
             gi = GopherItem(None, None, os.path.expanduser(line),
-                            "1", line, False)
+                            "1", line)
             self._go_to_gi(gi)
         # If this isn't a mark, treat it as a URL
         else:
             url = line
-            gi = url_to_gopheritem(url, self.tls)
+            gi = url_to_gopheritem(url)
             self._go_to_gi(gi)
 
     @needs_gi
@@ -851,7 +832,7 @@ Current tour can be listed with `tour ls` and scrubbed with `tour clear`."""
         elif line == "*":
             self.waypoints.extend(self.lookup)
         elif looks_like_url(line):
-            self.waypoints.append(url_to_gopheritem(line, self.tls))
+            self.waypoints.append(url_to_gopheritem(line))
         else:
             for index in line.split():
                 try:
@@ -1081,7 +1062,7 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             print("You need to 'add' some bookmarks, first")
         else:
             gi = GopherItem(None, None, os.path.expanduser(file_name),
-                            "1", file_name, self.tls)
+                            "1", file_name)
             self._go_to_gi(gi)
 
     ### Security
