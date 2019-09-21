@@ -1092,7 +1092,7 @@ current gopher browsing session."""
         # Compute flight time
         now = time.time()
         delta = now - self.log["start_time"]
-        hours, remainder = divmod(delta, 36060)
+        hours, remainder = divmod(delta, 3600)
         minutes, seconds = divmod(remainder, 60)
         # Count hosts
         ipv4_hosts = len([host for host in self.visited_hosts if host[0] == socket.AF_INET])
