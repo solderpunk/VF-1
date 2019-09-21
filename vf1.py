@@ -206,9 +206,7 @@ def looks_like_url(word):
 def extract_url(word):
     # Given a word that probably contains a URL, extract that URL from
     # with sensible surrounding punctuation.
-    print(word)
     for start, end in (("<",">"), ('[',']'), ("(",")"), ("'","'"), ('"','"')):
-        print(word[0], start)
         if word[0] == start and end in word:
             return word[1:word.rfind(end)]
     if word.endswith("."):
