@@ -26,6 +26,8 @@ import urllib.parse
 import ssl
 import time
 
+_VERSION = "0.0.11"
+
 # Use chardet if it's there, but don't depend on it
 try:
     import chardet
@@ -873,6 +875,10 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         veronica = url_to_gopheritem("gopher://gopher.floodgap.com:70/7/v2/vs")
         self._go_to_gi(veronica, query_str = line)
 
+    def do_version(self, line):
+        """Display version information."""
+        print("VF-1 " + _VERSION)
+
     ### Stuff that modifies the lookup table
     def do_ls(self, line):
         """List contents of current index.
@@ -1153,7 +1159,14 @@ def main():
                         help='start with this URL')
     parser.add_argument('--tls', action='store_true',
                         help='secure all communications using TLS')
+    parser.add_argument('--version', action='store_true',
+                        help='display version information and quit')
     args = parser.parse_args()
+
+    # Handle --version
+    if args.version:
+        print("VF-1 " + _VERSION)
+        sys.exit()
 
     # Instantiate client
     gc = GopherClient(debug=args.debug, tls=args.tls)
