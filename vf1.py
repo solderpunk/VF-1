@@ -135,9 +135,11 @@ def url_to_gopheritem(url):
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
-    if u.path and u.path[0] == '/' and len(u.path) > 1:
-        itemtype = u.path[1]
-        path = u.path[2:]
+    if u.query:
+        path += "?" + u.query
+    if path and path[0] == '/' and len(path) > 1:
+        itemtype = path[1]
+        path = path[2:]
     else:
         # Use item type 1 for top-level selector
         itemtype = 1
