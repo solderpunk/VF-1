@@ -61,6 +61,7 @@ _ABBREVS = {
     "t":    "tour",
     "u":    "up",
     "v":    "veronica",
+    "gp":   "gopherpedia",
 }
 
 # Programs to handle different item types
@@ -874,6 +875,12 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         """Submit a search query to the Veronica 2 search engine."""
         veronica = url_to_gopheritem("gopher://gopher.floodgap.com:70/7/v2/vs")
         self._go_to_gi(veronica, query_str = line)
+
+    def do_gopherpedia(self, line):
+        # Don't tell Betty!
+        """Submit a search query to the Gopherpedia."""
+        gopherpedia = url_to_gopheritem("gopher://gopherpedia.com/7/lookup")
+        self._go_to_gi(gopherpedia, query_str = line)
 
     def do_version(self, line):
         """Display version information."""
