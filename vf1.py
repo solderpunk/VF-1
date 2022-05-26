@@ -6,6 +6,8 @@
 #  - Joseph Lyman <tfurrows@sdf.org>
 #  - Adam Mayer (https://github.com/phooky)
 #  - Paco Esteban <paco@onna.be>
+#  - Wolfgang Zekoll <wzk@quietsche-entchen.de> - added HTTP support,
+#    see e.g. http://www.quietsche-entchen.de/gopher.ca.
 
 import argparse
 import cmd
@@ -26,7 +28,7 @@ import urllib.parse
 import ssl
 import time
 
-_VERSION = "0.0.11"
+_VERSION = "0.0.11+http"
 
 # Use chardet if it's there, but don't depend on it
 try:
@@ -116,13 +118,27 @@ _ITEMTYPE_COLORS = {
     "T":        _ANSI_COLORS["purple"],   # Telnet
 }
 
+_DEFAULT_PORTS = {
+    "gopher": 70,
+    "http":   80,
+    "https": 443,
+}
+
+_MIME_TO_ITEMTYPES = {
+    "text/plain":               "0",
+    "application/gopher-menu":  "1",
+    "text/html":                "h",
+    "image/gif":                "g",
+    "image/jpeg":               "I",
+}
+
 CRLF = '\r\n'
 
 # Lightweight representation of an item in Gopherspace
 GopherItem = collections.namedtuple("GopherItem",
-        ("host", "port", "path", "itemtype", "name"))
+        ("host", "port", "path", "itemtype", "name", "protocol"))
 
-def url_to_gopheritem(url):
+def url_to_gopheritem(url, _name=""):
     # urllibparse.urlparse can handle IPv6 addresses, but only if they
     # are formatted very carefully, in a way that users almost
     # certainly won't expect.  So, catch them early and try to fix
@@ -133,16 +149,21 @@ def url_to_gopheritem(url):
     if "://" not in url:
         url = "gopher://" + url
     u = urllib.parse.urlparse(url)
+    name = _name
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = u.path
-    if u.path and u.path[0] == '/' and len(u.path) > 1:
+    if u.scheme and u.scheme.startswith("http"):
+        itemtype = 0
+    elif u.path and u.path[0] == '/' and len(u.path) > 1:
         itemtype = u.path[1]
         path = u.path[2:]
     else:
         # Use item type 1 for top-level selector
         itemtype = 1
-    return GopherItem(u.hostname, u.port or 70, path,
-                      str(itemtype), "")
+    port = u.port or \
+        _DEFAULT_PORTS[u.scheme] if u.scheme in _DEFAULT_PORTS else 70
+    return GopherItem(u.hostname, port, path,
+                      str(itemtype), name, u.scheme)
 
 def fix_ipv6_url(url):
     # If there's a pair of []s in there, it's probably fine as is.
@@ -166,15 +187,16 @@ def fix_ipv6_url(url):
 
 def gopheritem_to_url(gi):
     if gi and gi.host:
-        return ("gopher://%s:%d/%s%s" % (
+        return ("%s://%s:%d%s%s" % (
+            gi.protocol,
             gi.host, int(gi.port),
-            gi.itemtype, gi.path))
+            "/" + gi.itemtype if gi.protocol.startswith("gopher") else "", gi.path))
     elif gi:
         return gi.path
     else:
         return ""
 
-def gopheritem_from_line(line):
+def gopheritem_from_line(line, parent):
     # Split on tabs.  Strip final element after splitting,
     # since if we split first we loose empty elements.
     parts = line.split("\t")
@@ -182,17 +204,48 @@ def gopheritem_from_line(line):
     # Discard Gopher+ noise
     if parts[-1] == "+":
         parts = parts[:-1]
-    # Attempt to assign variables.  This may fail.
-    # It's up to the caller to catch the Exception.
-    name, path, host, port = parts
+
+    name = parts[0]
+    path = parts[1]
+
     itemtype = name[0]
     name = name[1:]
-    port = int(port)
+    try:
+        host = parts[2]
+        port = int(parts[3])
+    except:
+        pass
+
+    # Fill misssing information
+    if host == ""  or  port == ""  or  port == 0:
+        #print (parent)
+        host = parent.host
+        port = parent.port
+
+    # Set a default protocol
+    protocol = parent.protocol
+    if protocol == "":
+        protocol = "gopher"
+
+    # Handle non-absolute paths
+    if protocol != "gopher"  and  not path.startswith("/"):
+        p = parent.path
+        k = p.rfind("/")
+        if k < 0:
+            path = "/" + path
+        else:
+            path = p[0:k] + "/" + path
+
     # Handle the h-type URL: hack for secure links
     if itemtype == "h" and path.startswith("URL:gopher"):
         url = path[4:]
         return url_to_gopheritem(url)
-    return GopherItem(host, port, path, itemtype, name)
+    # URL identifiers are handled as such.  Here, we already know
+    # the item's name.
+    elif path.find("://") >= 0:
+        gi = url_to_gopheritem(path, _name=name)
+        return gi
+    return GopherItem(host, port, path, itemtype, name, protocol)
 
 def gopheritem_to_line(gi, name=""):
     name = ((name or gi.name) or gopheritem_to_url(gi))
@@ -203,7 +256,8 @@ def gopheritem_to_line(gi, name=""):
 
 # Cheap and cheerful URL detector
 def looks_like_url(word):
-    return "." in word and ("gopher://" in word or "gophers://" in word)
+    return "." in word and ("gopher://" in word or "gophers://" in word or
+                    "http://" in word or "https://" in word)
 
 def extract_url(word):
     # Given a word that probably contains a URL, extract that URL from
@@ -302,12 +356,17 @@ class GopherClient(cmd.Cmd):
             elif gi.itemtype == "7":
                 if not query_str:
                     query_str = input("Query term: ")
-                address, f = self._send_request(gi, query=query_str)
+                address, gi, f = self._send_request(gi, query=query_str)
             else:
-                address, f = self._send_request(gi)
+                address, gi, f = self._send_request(gi)
             # Read whole response
             response = f.read()
             f.close()
+            # Insert the BASE to allow URL compuation.
+            if gi.itemtype == 'h':
+                response = ("<BASE HREF=\"" + gopheritem_to_url(gi) \
+                    + "\">\n").encode("UTF-8") \
+                    + response
 
         # Catch network errors which may be recoverable if a redundant
         # mirror is specified
@@ -444,8 +503,39 @@ enable automatic encoding detection.""")
             raise err
         # Send request and wrap response in a file descriptor
         self._debug("Sending %s<CRLF>" % gi.path)
-        s.sendall((gi.path + CRLF).encode("UTF-8"))
-        return address, s.makefile(mode = "rb")
+        if gi.protocol.startswith("http"):
+            # Send the HTTP request.
+            req = "GET " + gi.path + " HTTP/1.0" + CRLF + \
+                    "Host: " + gi.host + CRLF + \
+                    CRLF
+            #print(req)
+            s.sendall(req.encode("UTF-8"))
+            f = s.makefile(mode = "rb")
+            ct = "text/plain";
+            # Read the MIME header.
+            while True:
+                line = f.readline().decode("UTF-8").strip()
+                if line == "":
+                    break
+                # Get the MIME-type to set the item type.
+                elif line.lower().startswith("content-type:"):
+                    ct = line[14:].lower().strip()
+                    k = ct.find(";")
+                    if k >= 0:
+                        ct = ct[:k].strip();
+
+            if gi.path.endswith(".gm"):     # A dirty and lazy hack,
+                gi = gi._replace(itemtype = "1")
+            elif gi.path.endswith(".ca"):   # ... an aternative,
+                gi = gi._replace(itemtype = "1")
+            elif ct in _MIME_TO_ITEMTYPES:  # ... content-type to gopher type,
+                gi = gi._replace(itemtype = _MIME_TO_ITEMTYPES[ct])
+            elif ct.startswith("text/"):    # ... and a reasonable default.
+                gi = gi._replace(itemtype = "0")
+            return address, gi, f
+        else:
+            s.sendall((gi.path + CRLF).encode("UTF-8"))
+        return address, gi, s.makefile(mode = "rb")
 
     def _get_handler_cmd(self, gi):
         # First, get mimetype, either from itemtype or filename
@@ -544,11 +634,27 @@ enable automatic encoding detection.""")
             else:
                 tmpf.write(line)
 
+
+            # This enables vf-1 to read a Gopher0 directory from a
+            # Gopher+ listing.  Because this is a dirty hack it
+            # comes woth the cost of redundant servers, which are
+            # dropped here if the data is from Gopher0.
+            if line.startswith("+")  or  line.startswith("-"):
+                if line.startswith("+INFO:"):
+                    line = line[7:]
+                else:
+                    continue;
+            elif line.startswith(" "):
+                continue
+
+
+            line = line.strip()
             if line.startswith("i"):
                 rendered.append(line[1:].split("\t")[0] + "\n")
             else:
                 try:
-                    gi = gopheritem_from_line(line)
+                    gi = gopheritem_from_line(line, menu_gi)
+                    #print (gi)
                 except:
                     # Silently ignore things which are not errors, information
                     # lines or things which look like valid menu items
@@ -754,7 +860,7 @@ enable automatic encoding detection.""")
         # or a local file
         elif os.path.exists(os.path.expanduser(line)):
             gi = GopherItem(None, None, os.path.expanduser(line),
-                            "1", line)
+                            "1", line, "file")
             self._go_to_gi(gi)
         # If this isn't a mark, treat it as a URL
         else:
@@ -1066,7 +1172,7 @@ Bookmarks are stored in the ~/.vf1-bookmarks.txt file."""
             print("You need to 'add' some bookmarks, first")
         else:
             gi = GopherItem(None, None, os.path.expanduser(file_name),
-                            "1", file_name)
+                            "1", file_name, "file")
             self._go_to_gi(gi)
 
     ### Security
