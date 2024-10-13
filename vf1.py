@@ -134,7 +134,7 @@ def url_to_gopheritem(url):
         url = "gopher://" + url
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
-    path = u.path
+    path = urllib.parse.unquote(u.path)
     if u.query:
         path += "?" + u.query
     if path and path[0] == '/' and len(path) > 1:
@@ -272,7 +272,7 @@ class GopherClient(cmd.Cmd):
         }
         self.itemtype_counts = { }
 
-    def _go_to_gi(self, gi, update_hist=True, query_str=None, handle=True):
+    def _go_to_gi(self, gi, update_hist=True, handle=True):
         """This method might be considered "the heart of VF-1".
         Everything involved in fetching a gopher resource happens here:
         sending the request over the network, parsing the response if
@@ -301,10 +301,11 @@ class GopherClient(cmd.Cmd):
             if not gi.host:
                 address, f = None, open(gi.path, "rb")
             # Is this a search point?
-            elif gi.itemtype == "7":
-                if not query_str:
-                    query_str = input("Query term: ")
-                address, f = self._send_request(gi, query=query_str)
+            elif gi.itemtype == "7" and "%09" not in gi.path:
+                query = input("Query term: ")
+                new_gi = gi._replace(path=gi.path + "%09" + query)
+                self._go_to_gi(new_gi)
+                return
             else:
                 address, f = self._send_request(gi)
             # Read whole response
@@ -399,12 +400,9 @@ enable automatic encoding detection.""")
     # compatibility and to handle convenient download of plain text (including
     # Unicode) or binary files.  It's come a long way since then, though.
     # Everything network related happens in this one method!
-    def _send_request(self, gi, query=None):
+    def _send_request(self, gi):
         """Send a selector to a given host and port.
         Returns the resolved address and binary file with the reply."""
-        # Add query to selector
-        if query:
-            gi = gi._replace(path=gi.path + "\t" + query)
         # DNS lookup - will get IPv4 and IPv6 records if IPv6 is enabled
         if ":" in gi.host:
             # This is likely a literal IPv6 address, so we can *only* ask for
@@ -445,8 +443,9 @@ enable automatic encoding detection.""")
             # knowledge of earlier failures.
             raise err
         # Send request and wrap response in a file descriptor
-        self._debug("Sending %s<CRLF>" % gi.path)
-        s.sendall((gi.path + CRLF).encode("UTF-8"))
+        request_string = gi.path.replace("%09","\t")
+        self._debug("Sending %s<CRLF>" % request_string)
+        s.sendall((request_string + CRLF).encode("UTF-8"))
         return address, s.makefile(mode = "rb")
 
     def _get_handler_cmd(self, gi):
@@ -775,7 +774,7 @@ enable automatic encoding detection.""")
         new_path, removed = os.path.split(self.gi.path)
         if not removed:
             new_path, removed = os.path.split(new_path)
-        new_gi = self.gi._replace(path=new_path, itemtype="1")
+        new_gi = self.gi._replace(path=new_path, itemtype="1", name="")
         self._go_to_gi(new_gi)
 
     def do_back(self, *args):
@@ -874,8 +873,8 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
     def do_veronica(self, line):
         # Don't tell Betty!
         """Submit a search query to the Veronica 2 search engine."""
-        veronica = url_to_gopheritem("gopher://gopher.floodgap.com:70/7/v2/vs")
-        self._go_to_gi(veronica, query_str = line)
+        veronica = url_to_gopheritem("gopher://gopher.floodgap.com:70/7/v2/vs%09" + line)
+        self._go_to_gi(veronica)
 
     def do_version(self, line):
         """Display version information."""
