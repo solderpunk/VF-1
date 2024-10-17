@@ -203,6 +203,27 @@ def gopheritem_to_line(gi, name=""):
     path = gi.path
     return "\t".join((name, path, gi.host or "", str(gi.port))) + "\n"
 
+def gopheritem_to_filename(gi):
+    if gi.itemtype == '1':
+        path = gi.path
+        if path in ("", "/"):
+            # Attempt to derive a nice filename from the gopher
+            # item name, falling back to the hostname if there
+            # is no item name
+            if not gi.name:
+                filename = gi.host.lower() + ".txt"
+            else:
+                filename = gi.name.lower().replace(" ","_") + ".txt"
+        else:
+            # Derive a filename from the last component of the
+            # path
+            if path.endswith("/"):
+                path = path[0:-1]
+            filename = os.path.split(path)[1]
+    else:
+        filename = os.path.basename(gi.path)
+    return filename
+
 # Cheap and cheerful URL detector
 def looks_like_url(word):
     return "." in word and ("gopher://" in word or "gophers://" in word)
@@ -997,24 +1018,7 @@ Use 'ls -l' to see URLs."""
 
         # Derive filename from current GI's path, if one hasn't been set
         if not filename:
-            if gi.itemtype == '1':
-                path = gi.path
-                if path in ("", "/"):
-                    # Attempt to derive a nice filename from the gopher
-                    # item name, falling back to the hostname if there
-                    # is no item name
-                    if not gi.name:
-                        filename = gi.host.lower() + ".txt"
-                    else:
-                        filename = gi.name.lower().replace(" ","_") + ".txt"
-                else:
-                    # Derive a filename from the last component of the
-                    # path
-                    if path.endswith("/"):
-                        path = path[0:-1]
-                    filename = os.path.split(path)[1]
-            else:
-                filename = os.path.basename(gi.path)
+            filename = gopheritem_to_filename(gi)
 
         # Check for filename collisions and actually do the save if safe
         if os.path.exists(filename):
@@ -1152,12 +1156,16 @@ def main():
 
     # Parse args
     parser = argparse.ArgumentParser(description='A command line gopher client.')
+    parser.add_argument('url', metavar='URL', nargs='*',
+                        help='start with this URL')
     parser.add_argument('--bookmarks', action='store_true',
                         help='start with your list of bookmarks')
     parser.add_argument('--debug', action='store_true',
                         help='start with debugging mode enabled')
-    parser.add_argument('url', metavar='URL', nargs='*',
-                        help='start with this URL')
+    parser.add_argument('--dl', '--download', action='store_true',
+                        help='download a single URL and quit')
+    parser.add_argument('-o', '--output', metavar='FILE',
+                        help='filename to save --dl URL to')
     parser.add_argument('--tls', action='store_true',
                         help='secure all communications using TLS')
     parser.add_argument('--version', action='store_true',
@@ -1171,6 +1179,24 @@ def main():
 
     # Instantiate client
     gc = GopherClient(debug=args.debug, tls=args.tls)
+
+    # Handle --download
+    if args.dl:
+        # Download
+        gi = url_to_gopheritem(args.url[0])
+        gc._go_to_gi(gi, handle=False)
+        # Decide on a filename
+        if args.output:
+            filename = args.output
+        else:
+            filename = gopheritem_to_filename(gi)
+        # Copy from temp file to pwd with a nice name
+        shutil.copyfile(gc.tmp_filename, filename)
+        size = os.path.getsize(filename)
+        # Notify user where the file ended up
+        print("Wrote %d byte response to %s." % (size, filename))
+        gc.do_quit()
+        sys.exit()
 
     # Process config file
     rcfile = get_rcfile()
