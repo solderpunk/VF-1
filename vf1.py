@@ -67,6 +67,7 @@ _ABBREVS = {
 _ITEMTYPE_TO_MIME = {
     "1":    "text/plain",
     "0":    "text/plain",
+    "7":    "text/plain",
     "h":    "text/html",
     "g":    "image/gif",
 }
@@ -135,6 +136,7 @@ def url_to_gopheritem(url):
     u = urllib.parse.urlparse(url)
     # https://tools.ietf.org/html/rfc4266#section-2.1
     path = urllib.parse.unquote(u.path)
+    path = path.replace("\t", "%09")    # Fix search terms
     if u.query:
         path += "?" + u.query
     if path and path[0] == '/' and len(path) > 1:
@@ -275,6 +277,7 @@ class GopherClient(cmd.Cmd):
             "encoding" : "iso-8859-1",
             "ipv6" : True,
             "timeout" : 10,
+            "search_url": "gopher://gopher.floodgap.com:70/7/v2/vs"
         }
 
         self.log = {
@@ -683,7 +686,7 @@ enable automatic encoding detection.""")
         elif line.strip() == "..":
             return self.do_up()
         elif line.startswith("/"):
-            return self.do_search(line[1:])
+            return self.do_filter(line[1:])
 
         # Expand abbreviated commands
         first_word = line.split()[0].strip()
@@ -891,6 +894,11 @@ Think of it like marks in vi: 'mark a'='ma' and 'go a'=''a'."""
         else:
             print("Invalid mark, must be one letter")
 
+    def do_search(self, line):
+        """Submit a search query to the user-configured search engine."""
+        search = url_to_gopheritem(self.options["search_url"] + "%09" + line)
+        self._go_to_gi(search)
+
     def do_veronica(self, line):
         # Don't tell Betty!
         """Submit a search query to the Veronica 2 search engine."""
@@ -915,8 +923,8 @@ Use 'ls -l' to see URLs."""
         self._show_lookup(url=True)
         self.page_index = 0
 
-    def do_search(self, searchterm):
-        """Search index (case insensitive)."""
+    def do_filter(self, searchterm):
+        """Filter index (case insensitive)."""
         results = [
             gi for gi in self.lookup if searchterm.lower() in gi.name.lower()]
         if results:
