@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # VF-1 Gopher client
-# (C) 2018,2019 Solderpunk <solderpunk@sdf.org>
+# (C) 2018,2019,2024 Solderpunk <solderpunk@posteo.net>
 # With contributions from:
 #  - Alex Schroeder <alex@gnu.org>
 #  - Joseph Lyman <tfurrows@sdf.org>
